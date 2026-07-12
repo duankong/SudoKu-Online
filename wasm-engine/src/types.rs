@@ -136,4 +136,7 @@ pub enum Action {
     NewGame { difficulty: Difficulty },
     UpdateGameSettings { settings: GameSettings },
     SetFinalTime { seconds: u32 },
+    AutoNotes,
+    ClearNotes,
+    ApplyHint,
 }

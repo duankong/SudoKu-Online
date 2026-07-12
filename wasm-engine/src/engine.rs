@@ -1,6 +1,7 @@
 use crate::generator::{dig_holes, fill_board, seed_from_date};
 use crate::highlight::compute as compute_highlights;
 use crate::hint_engine::find_hint;
+use crate::hint_engine::{auto_notes, clear_notes};
 use crate::history::History;
 use crate::types::*;
 use crate::validator::{check_game_status, conflict_check};
@@ -103,6 +104,9 @@ pub fn reduce(state: GameState, action: Action, history: &mut History) -> GameSt
         Action::NewGame { .. } => state,
         Action::UpdateGameSettings { settings } => handle_update_settings(state, settings),
         Action::SetFinalTime { seconds } => handle_set_final_time(state, seconds),
+        Action::AutoNotes => handle_auto_notes(state, history),
+        Action::ClearNotes => handle_clear_notes(state, history),
+        Action::ApplyHint => handle_apply_hint(state, history),
     }
 }
 
@@ -284,14 +288,9 @@ fn handle_get_hint(mut state: GameState) -> GameState {
     }
     state.hint = find_hint(&state.grid);
 
-    // If solver fallback filled a cell, apply it
+    // NOTE: No longer auto-apply SolverFallback — all strategies only compute,
+    // never modify the board. Use ApplyHint action to apply.
     if let Some(ref hint) = state.hint {
-        if matches!(hint.strategy, StrategyType::SolverFallback) {
-            // Apply the hint value
-            let t = hint.target.clone();
-            state.grid.cells[t.row as usize][t.col as usize].value = hint.value;
-        }
-        // Highlight related cells
         let hint_cells: Vec<Pos> = hint.related_cells.clone();
         let highlights = compute_highlights(&state.grid, &state.settings, &hint_cells);
         state.grid.highlights = highlights;
@@ -310,6 +309,101 @@ fn handle_update_settings(mut state: GameState, settings: GameSettings) -> GameS
 
 fn handle_set_final_time(mut state: GameState, seconds: u32) -> GameState {
     state.elapsed_seconds = seconds;
+    state
+}
+
+fn handle_auto_notes(mut state: GameState, history: &mut History) -> GameState {
+    if state.game_status != GameStatus::Playing {
+        return state;
+    }
+    push_undo(history, &state.grid);
+    state.grid = auto_notes(&state.grid);
+    // Recompute highlights
+    let highlights = compute_highlights(&state.grid, &state.settings, &[]);
+    state.grid.highlights = highlights;
+    state
+}
+
+fn handle_clear_notes(mut state: GameState, history: &mut History) -> GameState {
+    if state.game_status != GameStatus::Playing {
+        return state;
+    }
+    push_undo(history, &state.grid);
+    state.grid = clear_notes(&state.grid);
+    let highlights = compute_highlights(&state.grid, &state.settings, &[]);
+    state.grid.highlights = highlights;
+    state
+}
+
+fn handle_apply_hint(mut state: GameState, history: &mut History) -> GameState {
+    if state.game_status != GameStatus::Playing {
+        return state;
+    }
+    let hint = match state.hint.take() {
+        Some(h) => h,
+        None => return state,
+    };
+
+    match hint.strategy {
+        // ── Fill-type strategies: place value on target cell ──
+        StrategyType::NakedSingle
+        | StrategyType::HiddenSingle
+        | StrategyType::SolverFallback => {
+            push_undo(history, &state.grid);
+
+            let t = &hint.target;
+            let row = t.row as usize;
+            let col = t.col as usize;
+
+            // Same flow as handle_input_number (conflict check, error count, smart-erase notes)
+            state.grid.cells[row][col].value = hint.value;
+            state.grid.cells[row][col].notes.clear();
+
+            // Clear previous errors
+            for r in 0..9usize {
+                for c in 0..9usize {
+                    state.grid.cells[r][c].is_error = false;
+                }
+            }
+
+            let conflicts = conflict_check(&state.grid, t.row, t.col, hint.value);
+            if !conflicts.is_empty() {
+                for pos in &conflicts {
+                    state.grid.cells[pos.row as usize][pos.col as usize].is_error = true;
+                }
+                state.grid.cells[row][col].is_error = true;
+                state.error_count += 1;
+            }
+
+            smart_erase_notes(&mut state.grid.cells, row, col, hint.value);
+
+            let highlights = compute_highlights(&state.grid, &state.settings, &[]);
+            state.grid.highlights = highlights;
+
+            state.game_status = check_game_status(
+                &state.grid, &state.solution, state.error_count, state.max_errors,
+            );
+        }
+
+        // ── Elimination-type strategies: remove candidates from related_cells ──
+        StrategyType::NakedPair
+        | StrategyType::HiddenPair
+        | StrategyType::Pointing
+        | StrategyType::BoxLineReduction
+        | StrategyType::XWing => {
+            push_undo(history, &state.grid);
+            let eliminated = &hint.eliminated;
+            for pos in &hint.related_cells {
+                let cell = &mut state.grid.cells[pos.row as usize][pos.col as usize];
+                cell.notes.retain(|n| !eliminated.contains(n));
+            }
+
+            let highlights = compute_highlights(&state.grid, &state.settings, &[]);
+            state.grid.highlights = highlights;
+        }
+    }
+
+    // hint is already cleared via .take() above
     state
 }
 
