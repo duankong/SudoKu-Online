@@ -1,7 +1,7 @@
 use crate::types::{Grid, Hint, Pos, StrategyType};
 
 /// Compute valid candidates for a cell at (row, col).
-fn candidates(grid: &Grid, row: usize, col: usize) -> Vec<u8> {
+pub(crate) fn candidates(grid: &Grid, row: usize, col: usize) -> Vec<u8> {
     if grid.cells[row][col].value != 0 {
         return vec![];
     }
@@ -46,6 +46,40 @@ pub fn find_hint(grid: &Grid) -> Option<Hint> {
         .or_else(|| box_line_reduction(grid))
         .or_else(|| x_wing(grid))
         .or_else(|| solver_fallback(grid))
+}
+
+/// Fill every empty cell with computed candidates (overwrites existing notes).
+pub fn auto_notes(grid: &Grid) -> Grid {
+    let mut new_cells = grid.cells.clone();
+    for r in 0..9 {
+        for c in 0..9 {
+            if new_cells[r][c].value == 0 {
+                new_cells[r][c].notes = candidates(grid, r, c);
+            }
+        }
+    }
+    Grid {
+        cells: new_cells,
+        selected: grid.selected.clone(),
+        selected_number: grid.selected_number,
+        highlights: grid.highlights.clone(),
+    }
+}
+
+/// Clear all notes across the entire board (does not affect filled values).
+pub fn clear_notes(grid: &Grid) -> Grid {
+    let mut new_cells = grid.cells.clone();
+    for r in 0..9 {
+        for c in 0..9 {
+            new_cells[r][c].notes.clear();
+        }
+    }
+    Grid {
+        cells: new_cells,
+        selected: grid.selected.clone(),
+        selected_number: grid.selected_number,
+        highlights: grid.highlights.clone(),
+    }
 }
 
 // ── Strategy 1: Naked Single ────────────────────────────────────────────
