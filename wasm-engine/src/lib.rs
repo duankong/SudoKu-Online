@@ -3,6 +3,7 @@ use wasm_bindgen::prelude::*;
 mod grid;
 pub mod solver;
 mod types;
+pub mod validator;
 
 #[wasm_bindgen(start)]
 pub fn main() {
