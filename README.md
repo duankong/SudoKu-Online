@@ -40,27 +40,6 @@
 
 ---
 
-## 🏗️ Architecture
-
-```
-┌─────────────────────────────────────────────┐
-│                   React UI                    │
-│  Dashboard · Game · Settings · Components    │
-│  TypeScript · TailwindCSS · react-i18next    │
-├─────────────────────────────────────────────┤
-│              JSON dispatch layer              │
-│   dispatch(action) → new_state               │
-├─────────────────────────────────────────────┤
-│               Rust WASM Engine                │
-│  Generator · Solver · Validator · Hints      │
-│  History · Highlight · Engine                │
-└─────────────────────────────────────────────┘
-```
-
-**Why Rust + WASM?** Sudoku generation and solving are computationally intensive. A backtracking solver can explore thousands of branches — Rust compiles to native-speed WebAssembly, keeping everything snappy inside your browser.
-
----
-
 ## 🛠 Tech Stack
 
 | 🧱 Layer | 🛠️ Technology |
@@ -118,17 +97,6 @@ npm run build:wasm
 npx kill-port 5173 5174 5175 5176 5177 5178 5179
 npm run dev
 # → http://localhost:5173 🎉
-```
-
-### 🧪 Testing
-
-```bash
-# Rust unit tests (55+ tests)
-cd wasm-engine && cargo test
-
-# Full production build
-npm run build
-# → dist/ ready to deploy
 ```
 
 ---
