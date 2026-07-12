@@ -1,6 +1,8 @@
 use wasm_bindgen::prelude::*;
 
 mod grid;
+pub mod highlight;
+pub mod history;
 pub mod solver;
 mod types;
 pub mod validator;
