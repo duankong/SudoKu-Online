@@ -2,7 +2,7 @@
 
 A clean, calm Sudoku game built with **React + TypeScript** and a **Rust WASM** engine. Play instantly in your browser — no ads, no distractions.
 
-[Play Now](https://duankong.github.io/SudoKu-Online) · [GitHub](https://github.com/duankong/SudoKu-Online)
+[Play Now](https://duankong.github.io/SudoKu-Online/) · [GitHub](https://github.com/duankong/SudoKu-Online)
 
 <p align="center">
   <img src="assets/dashboard.png" alt="Dashboard" width="45%" />
