@@ -1,6 +1,7 @@
 use wasm_bindgen::prelude::*;
 
 mod grid;
+pub mod solver;
 mod types;
 
 #[wasm_bindgen(start)]
