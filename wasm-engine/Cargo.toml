@@ -3,6 +3,9 @@ name = "sudokucalm-engine"
 version = "0.1.0"
 edition = "2021"
 
+[package.metadata.wasm-pack]
+wasm-opt = false
+
 [lib]
 crate-type = ["cdylib"]
 
@@ -17,3 +20,4 @@ console_error_panic_hook = "0.1"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 js-sys = "0.3"
+getrandom = { version = "0.2", features = ["js"] }
