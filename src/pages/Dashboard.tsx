@@ -119,11 +119,11 @@ export function Dashboard() {
   const dailyCompleted = dailyProgress.lastCompletedDate === today;
 
   return (
-    <div className="min-h-screen bg-white max-w-[500px] mx-auto flex flex-col px-6 py-12">
+    <div className="min-h-screen bg-white max-w-4xl mx-auto flex flex-col px-6 py-8 md:py-12">
       {/* Header with crown and gear */}
       <div className="flex items-center justify-between mb-10">
         <div className="flex-1" /> {/* spacer */}
-        <div className="text-center flex-1">
+        <div className="text-center">
           <h1 className="text-3xl font-bold text-ink-dark tracking-tight">{t('app.title')}</h1>
           <p className="text-sm text-ink-mid mt-1">{t('app.subtitle')}</p>
         </div>
@@ -139,58 +139,61 @@ export function Dashboard() {
         </div>
       </div>
 
-      {/* Continue Puzzle */}
-      {hasSave && saveInfo && savedState && (
+      {/* Top row: Continue Puzzle + Daily Challenge (side by side on desktop) */}
+      <div className="flex flex-col md:flex-row gap-4 mb-8">
+        {/* Continue Puzzle */}
+        {hasSave && saveInfo && savedState && (
+          <button
+            onClick={() => navigate('/game?mode=continue')}
+            className="flex-1 p-4 rounded-2xl bg-bg-board border border-border text-left
+                       hover:bg-gray-100 active:scale-[0.98] transition-all"
+          >
+            <div className="text-sm font-medium text-ink-dark mb-2">{t('dashboard.continue')}</div>
+            <div className="flex gap-4 items-center">
+              <div className="w-20 h-20 flex-shrink-0">
+                <SaveThumbnail cells={savedState.grid.cells} />
+              </div>
+              <div className="text-left">
+                <div className="text-sm font-semibold text-ink-dark">
+                  {t(`dashboard.${saveInfo.difficulty.toLowerCase()}`, saveInfo.difficulty)}
+                </div>
+                <div className="text-xs text-ink-mid mt-0.5">
+                  {t('dashboard.progress', { progress: saveInfo.progress })}
+                </div>
+              </div>
+            </div>
+          </button>
+        )}
+
+        {/* Daily Challenge */}
         <button
-          onClick={() => navigate('/game?mode=continue')}
-          className="w-full mb-4 p-4 rounded-2xl bg-bg-board border border-border text-left
-                     hover:bg-gray-100 active:scale-[0.98] transition-all"
+          onClick={() => navigate('/game?mode=daily')}
+          className="flex-1 p-4 rounded-2xl bg-accent/15 border border-accent/30 text-left
+                     hover:bg-accent/25 active:scale-[0.98] transition-all"
         >
-          <div className="text-sm font-medium text-ink-dark mb-2">{t('dashboard.continue')}</div>
-          <div className="flex gap-4 items-center">
-            <div className="w-20 h-20 flex-shrink-0">
-              <SaveThumbnail cells={savedState.grid.cells} />
-            </div>
-            <div className="text-left">
-              <div className="text-sm font-semibold text-ink-dark">
-                {t(`dashboard.${saveInfo.difficulty.toLowerCase()}`, saveInfo.difficulty)}
-              </div>
-              <div className="text-xs text-ink-mid mt-0.5">
-                {t('dashboard.progress', { progress: saveInfo.progress })}
-              </div>
-            </div>
+          <div className="text-sm font-medium text-ink-dark">{t('dashboard.daily')}</div>
+          <div className="mt-1 flex items-center justify-between">
+            <span className="text-lg font-semibold text-ink-dark">{today}</span>
+            {dailyCompleted ? (
+              <span className="text-xs font-medium text-green-600 bg-green-100 px-2 py-0.5 rounded-full">
+                {dailyProgress.streak > 0
+                  ? t('dashboard.streak', { count: dailyProgress.streak })
+                  : t('dashboard.today')}
+              </span>
+            ) : dailyProgress.streak > 0 ? (
+              <span className="text-xs font-medium text-ink-mid bg-white/60 px-2 py-0.5 rounded-full">
+                {t('dashboard.streak', { count: dailyProgress.streak })}
+              </span>
+            ) : null}
           </div>
         </button>
-      )}
-
-      {/* Daily Challenge */}
-      <button
-        onClick={() => navigate('/game?mode=daily')}
-        className="w-full mb-8 p-4 rounded-2xl bg-accent/15 border border-accent/30 text-left
-                   hover:bg-accent/25 active:scale-[0.98] transition-all"
-      >
-        <div className="text-sm font-medium text-ink-dark">{t('dashboard.daily')}</div>
-        <div className="mt-1 flex items-center justify-between">
-          <span className="text-lg font-semibold text-ink-dark">{today}</span>
-          {dailyCompleted ? (
-            <span className="text-xs font-medium text-green-600 bg-green-100 px-2 py-0.5 rounded-full">
-              {dailyProgress.streak > 0
-                ? t('dashboard.streak', { count: dailyProgress.streak })
-                : t('dashboard.today')}
-            </span>
-          ) : dailyProgress.streak > 0 ? (
-            <span className="text-xs font-medium text-ink-mid bg-white/60 px-2 py-0.5 rounded-full">
-              {t('dashboard.streak', { count: dailyProgress.streak })}
-            </span>
-          ) : null}
-        </div>
-      </button>
+      </div>
 
       {/* Difficulty Selection */}
       <h2 className="text-sm font-medium text-ink-mid uppercase tracking-wider mb-3">
         {t('dashboard.play')}
       </h2>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {DIFFICULTIES.map((d) => (
           <button
             key={d.key}

@@ -7,6 +7,7 @@ interface HintDrawerProps {
   visible: boolean;
   onClose: () => void;
   onApplyHint: () => void;
+  inline?: boolean;
 }
 
 const STRATEGY_LABELS: Record<string, string> = {
@@ -20,11 +21,80 @@ const STRATEGY_LABELS: Record<string, string> = {
   SolverFallback: '回溯求解',
 };
 
-export function HintDrawer({ hint, visible, onClose, onApplyHint }: HintDrawerProps) {
+export function HintDrawer({ hint, visible, onClose, onApplyHint, inline }: HintDrawerProps) {
   const { t } = useTranslation();
 
   if (!hint) return null;
 
+  // Inline mode: used inside the sidebar on desktop
+  if (inline) {
+    return (
+      <div>
+        {/* Header */}
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <Lightbulb size={18} className="text-accent" />
+            <span className="text-base font-semibold text-ink-dark">{t('hint.smartHint')}</span>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1 text-ink-mid hover:text-ink-dark transition-colors"
+            aria-label={t('hint.notNow')}
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Strategy badge */}
+        <div className="mb-2">
+          <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-accent/30 text-ink-dark">
+            {STRATEGY_LABELS[hint.strategy] || hint.strategy}
+          </span>
+          <span className="ml-2 text-xs text-ink-mid">{hint.strategy}</span>
+        </div>
+
+        <p className="text-sm text-ink-dark leading-relaxed mb-3">{hint.message_cn}</p>
+
+        {hint.value > 0 && (
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-xs text-ink-mid">{t('hint.recommended')}</span>
+            <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary text-white font-bold text-lg">
+              {hint.value}
+            </span>
+            <span className="text-xs text-ink-mid">
+              {t('hint.position', { row: hint.target.row + 1, col: hint.target.col + 1 })}
+            </span>
+          </div>
+        )}
+
+        {hint.eliminated.length > 0 && (
+          <p className="text-xs text-ink-mid mb-3">
+            {t('hint.eliminate')} {hint.eliminated.join(', ')}
+          </p>
+        )}
+
+        {/* Action buttons */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onClose}
+            className="flex-1 py-2 rounded-xl border border-border text-sm font-medium text-ink-mid
+                       hover:bg-gray-50 active:scale-[0.98] transition-all"
+          >
+            {t('hint.notNow')}
+          </button>
+          <button
+            onClick={onApplyHint}
+            className="flex-1 py-2 rounded-xl bg-primary text-white text-sm font-medium
+                       hover:bg-primary/90 active:scale-[0.98] transition-all"
+          >
+            {t('hint.applyHint')}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Bottom drawer mode (mobile)
   return (
     <div
       className={`

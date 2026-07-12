@@ -86,7 +86,7 @@ export const Cell = React.memo(function Cell({
                 key={n}
                 className="flex items-center justify-center select-none"
                 style={{
-                  fontSize: 'clamp(6px, 1.8vw, 10px)',
+                  fontSize: 'clamp(6px, 1.8vw, 11px)',
                   fontWeight: 500,
                   color: notes.includes(n) ? '#8E8E93' : 'transparent',
                   lineHeight: 1,
@@ -102,7 +102,7 @@ export const Cell = React.memo(function Cell({
         <span
           className="select-none"
           style={{
-            fontSize: 'clamp(16px, 5vw, 26px)',
+            fontSize: 'clamp(16px, 5vw, 32px)',
             fontFamily: "'Inter', 'SF Pro Display', 'PingFang SC', system-ui, sans-serif",
             lineHeight: 1,
             ...valueStyle,

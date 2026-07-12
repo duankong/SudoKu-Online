@@ -37,7 +37,7 @@ export const GridBoard = React.memo(function GridBoard({
 
   // Build grid with 3x3 box borders
   return (
-    <div className="w-full max-w-[500px] mx-auto">
+    <div className="w-full">
       <div
         className="rounded-2xl overflow-hidden shadow-md"
         style={{
