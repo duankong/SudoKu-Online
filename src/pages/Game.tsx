@@ -9,6 +9,7 @@ import { NumberPad } from '../components/NumberPad';
 import { Toolbar } from '../components/Toolbar';
 import { HintDrawer } from '../components/HintDrawer';
 import { GameOverDialog } from '../components/GameOverDialog';
+import { getLocalDateString, updateDailyStreak } from './Dashboard';
 import type { GameStatus, Difficulty } from '../types/generated';
 
 export function Game() {
@@ -18,9 +19,8 @@ export function Game() {
   const storage = useLocalStorage();
   const timer = useTimer();
 
-  const [noteMode, setNoteMode] = useState(false);
+  const [autoNotesActive, setAutoNotesActive] = useState(false);
   const [showHint, setShowHint] = useState(false);
-  const [paused, setPaused] = useState(false);
 
   // Track if game was initialized
   const initialized = useRef(false);
@@ -33,7 +33,7 @@ export function Game() {
     const difficulty = searchParams.get('difficulty') as Difficulty | null;
 
     if (mode === 'daily') {
-      const today = new Date().toISOString().split('T')[0];
+      const today = getLocalDateString();
       engine.newDaily(today);
       initialized.current = true;
     } else if (mode === 'continue') {
@@ -58,7 +58,7 @@ export function Game() {
 
   // Start timer when state first loads
   useEffect(() => {
-    if (engine.state && !initialized.current === false && !timer.running) {
+    if (engine.state && initialized.current && !timer.running) {
       timer.start();
     }
   }, [engine.state?.grid]);
@@ -70,6 +70,16 @@ export function Game() {
     }
   }, [engine.state]);
 
+  // Update daily streak when game is won
+  useEffect(() => {
+    if (engine.state?.game_status === 'Won') {
+      const mode = searchParams.get('mode');
+      if (mode === 'daily') {
+        updateDailyStreak();
+      }
+    }
+  }, [engine.state?.game_status]);
+
   // Handle timer sync with WASM
   useEffect(() => {
     if (engine.state && timer.seconds > 0 && timer.seconds !== engine.state.elapsed_seconds) {
@@ -79,80 +89,87 @@ export function Game() {
 
   const handleSelectCell = useCallback(
     (row: number, col: number) => {
-      if (paused || !engine.state) return;
+      if (!engine.state) return;
       if (engine.state.game_status !== 'Playing') return;
       engine.dispatch({ type: 'selectCell', row, col });
     },
-    [engine, paused],
+    [engine],
   );
 
   const handleNumber = useCallback(
     (value: number) => {
-      if (paused || !engine.state) return;
+      if (!engine.state) return;
       if (engine.state.game_status !== 'Playing') return;
-      if (noteMode) {
-        engine.dispatch({ type: 'toggleNote', value });
-      } else {
-        engine.dispatch({ type: 'inputNumber', value });
-      }
+      engine.dispatch({ type: 'inputNumber', value });
       setShowHint(false);
     },
-    [engine, noteMode, paused],
+    [engine],
+  );
+
+  const handleToggleNote = useCallback(
+    (value: number) => {
+      if (!engine.state) return;
+      if (engine.state.game_status !== 'Playing') return;
+      engine.dispatch({ type: 'toggleNote', value });
+    },
+    [engine],
   );
 
   const handleErase = useCallback(() => {
-    if (paused || !engine.state) return;
+    if (!engine.state) return;
     engine.dispatch({ type: 'erase' });
-  }, [engine, paused]);
+  }, [engine]);
 
   const handleUndo = useCallback(() => {
-    if (paused || !engine.state) return;
+    if (!engine.state) return;
     engine.dispatch({ type: 'undo' });
-  }, [engine, paused]);
+  }, [engine]);
 
   const handleRedo = useCallback(() => {
-    if (paused || !engine.state) return;
+    if (!engine.state) return;
     engine.dispatch({ type: 'redo' });
-  }, [engine, paused]);
+  }, [engine]);
 
   const handleHint = useCallback(() => {
-    if (paused || !engine.state) return;
+    if (!engine.state) return;
     engine.dispatch({ type: 'getHint' });
     setShowHint(true);
-  }, [engine, paused]);
+  }, [engine]);
 
-  const handlePause = useCallback(() => {
-    if (paused) {
-      timer.resume();
-      setPaused(false);
+  const handleAutoNotes = useCallback(() => {
+    if (!engine.state) return;
+    if (autoNotesActive) {
+      engine.dispatch({ type: 'clearNotes' });
+      setAutoNotesActive(false);
     } else {
-      timer.pause();
-      setPaused(true);
+      engine.dispatch({ type: 'autoNotes' });
+      setAutoNotesActive(true);
     }
-  }, [paused, timer]);
+  }, [engine, autoNotesActive]);
+
+  const handleApplyHint = useCallback(() => {
+    if (!engine.state) return;
+    engine.dispatch({ type: 'applyHint' });
+    setShowHint(false);
+  }, [engine]);
 
   const handleNewGame = useCallback(() => {
     const diff = engine.state?.difficulty || 'Easy';
     engine.newGame(diff);
     timer.start();
     setShowHint(false);
-    setPaused(false);
+    setAutoNotesActive(false);
   }, [engine, timer]);
 
   const handleHome = useCallback(() => {
     navigate('/');
   }, [navigate]);
 
-  const handleToggleNoteMode = useCallback(() => {
-    setNoteMode((m) => !m);
-    engine.dispatch({ type: 'toggleNoteMode' });
-  }, [engine]);
-
   // Loading / Error states
   if (engine.loading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="text-ink-mid text-lg">加载中...</div>
+        <div className="text-ink-mid text-lg animate-pulse">加载中...</div>
       </div>
     );
   }
@@ -163,7 +180,7 @@ export function Game() {
         <div className="text-error text-lg">加载失败</div>
         <button
           onClick={() => window.location.reload()}
-          className="px-4 py-2 rounded-lg bg-primary text-white"
+          className="px-4 py-2 rounded-lg bg-primary text-white hover:bg-primary/90 active:scale-95 transition-all"
         >
           重试
         </button>
@@ -171,14 +188,20 @@ export function Game() {
     );
   }
 
-  const { state } = engine;
+  // At this point engine.state is guaranteed non-null
+  const state = engine.state;
+  const sel = state.grid.selected;
+  const selectedCell = sel ? state.grid.cells[sel.row][sel.col] : null;
+  const hasSelectedValue = selectedCell ? selectedCell.value !== 0 : false;
+  const selectedCellNotes: number[] = selectedCell ? selectedCell.notes : [];
+
   const gameOver = state.game_status === 'Won' || state.game_status === 'Lost';
+  const disabled = gameOver;
   const gameStatus: GameStatus = state.game_status;
-  const disabled = paused || gameOver;
 
   return (
     <div className="flex flex-col h-screen max-w-[500px] mx-auto bg-bg-board">
-      {/* Status bar */}
+      {/* Status bar — no pause */}
       <StatusBar
         difficulty={state.difficulty}
         errorCount={state.error_count}
@@ -186,32 +209,16 @@ export function Game() {
         gameStatus={gameStatus}
         timerDisplay={timer.format()}
         showTimer={state.settings.show_timer}
-        onPause={handlePause}
         onBack={handleHome}
       />
 
-      {/* Paused overlay */}
-      {paused && (
-        <div className="absolute inset-0 z-30 flex items-center justify-center bg-white/90">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-ink-dark mb-4">已暂停</h2>
-            <button
-              onClick={handlePause}
-              className="px-6 py-3 rounded-xl bg-primary text-white font-medium
-                         hover:bg-primary/90 active:scale-95 transition-all"
-            >
-              继续游戏
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Toolbar */}
+      {/* Toolbar — auto notes toggle instead of erase */}
       <Toolbar
         onUndo={handleUndo}
         onRedo={handleRedo}
+        onAutoNotes={handleAutoNotes}
         onHint={handleHint}
-        onErase={handleErase}
+        autoNotesActive={autoNotesActive}
         disabled={disabled}
       />
 
@@ -225,22 +232,24 @@ export function Game() {
         />
       </div>
 
-      {/* Number pad */}
+      {/* Number pad — candidate sub-row + erase */}
       <div className="pb-4 pt-1">
         <NumberPad
           onNumber={handleNumber}
           onErase={handleErase}
-          onToggleNoteMode={handleToggleNoteMode}
-          noteMode={noteMode}
+          onToggleNote={handleToggleNote}
+          selectedCellNotes={selectedCellNotes}
+          hasSelectedValue={hasSelectedValue}
           disabled={disabled}
         />
       </div>
 
-      {/* Hint drawer */}
+      {/* Hint drawer — with Apply Hint button */}
       <HintDrawer
         hint={state.hint}
         visible={showHint}
         onClose={() => setShowHint(false)}
+        onApplyHint={handleApplyHint}
       />
 
       {/* Game over dialog */}

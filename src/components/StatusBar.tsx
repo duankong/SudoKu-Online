@@ -1,3 +1,6 @@
+import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { AlertTriangle, MoreHorizontal, ArrowLeft } from 'lucide-react';
 import type { Difficulty, GameStatus } from '../types/generated';
 
 interface StatusBarProps {
@@ -7,7 +10,6 @@ interface StatusBarProps {
   gameStatus: GameStatus;
   timerDisplay: string;
   showTimer: boolean;
-  onPause: () => void;
   onBack: () => void;
 }
 
@@ -25,10 +27,10 @@ export function StatusBar({
   gameStatus,
   timerDisplay,
   showTimer,
-  onPause,
   onBack,
 }: StatusBarProps) {
-  const isPaused = gameStatus !== 'Playing';
+  const navigate = useNavigate();
+  const { t } = useTranslation();
 
   return (
     <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid #D0D7E5' }}>
@@ -39,9 +41,7 @@ export function StatusBar({
           className="p-1 text-ink-mid hover:text-ink-dark transition-colors"
           aria-label="Back to menu"
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M19 12H5m7-7l-7 7 7 7" />
-          </svg>
+          <ArrowLeft size={20} />
         </button>
         <span className="text-sm font-medium text-ink-dark">
           {DIFFICULTY_LABELS[difficulty] || difficulty}
@@ -50,45 +50,36 @@ export function StatusBar({
 
       {/* Center: Errors + Timer */}
       <div className="flex items-center gap-4">
-        {/* Error dots */}
-        <div className="flex items-center gap-1" title={`${errorCount}/${maxErrors} errors`}>
-          {Array.from({ length: maxErrors }, (_, i) => (
-            <div
-              key={i}
-              className={`w-2 h-2 rounded-full transition-colors ${
-                i < errorCount ? 'bg-error' : 'bg-border'
-              }`}
-            />
-          ))}
+        {/* Error icon + count */}
+        <div className="flex items-center gap-1.5" title={t('statusBar.errors', { count: errorCount, max: maxErrors })}>
+          <AlertTriangle
+            size={16}
+            className={errorCount > 0 ? 'text-error' : 'text-ink-light'}
+          />
+          <span className={`text-xs font-medium tabular-nums ${
+            errorCount > 0 ? 'text-error' : 'text-ink-mid'
+          }`}>
+            {errorCount}/{maxErrors}
+          </span>
         </div>
 
         {/* Timer */}
         {showTimer && (
-          <span
-            className={`text-sm font-mono tabular-nums min-w-[48px] text-center ${
-              isPaused ? 'text-ink-mid' : 'text-ink-dark'
-            }`}
-          >
+          <span className={`text-sm font-mono tabular-nums min-w-[48px] text-center ${
+            gameStatus !== 'Playing' ? 'text-ink-mid' : 'text-ink-dark'
+          }`}>
             {timerDisplay}
           </span>
         )}
       </div>
 
-      {/* Right: Pause button */}
+      {/* Right: "..." menu → /game-settings */}
       <button
-        onClick={onPause}
+        onClick={() => navigate('/game-settings')}
         className="p-1 text-ink-mid hover:text-ink-dark transition-colors"
-        aria-label={isPaused ? 'Resume' : 'Pause'}
+        aria-label="Game Settings"
       >
-        {isPaused ? (
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M8 5v14l11-7z" />
-          </svg>
-        ) : (
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
-          </svg>
-        )}
+        <MoreHorizontal size={20} />
       </button>
     </div>
   );
