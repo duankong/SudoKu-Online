@@ -2,7 +2,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches: [master]
   workflow_dispatch:
 
 permissions:
@@ -44,7 +44,7 @@ jobs:
       - name: Build site
         run: npm run build
         env:
-          BASE_URL: /sudokucalm/
+          BASE_URL: /SudoKu-Online/
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
