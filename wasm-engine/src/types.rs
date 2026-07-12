@@ -84,7 +84,7 @@ impl Default for GameSettings {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize, TS)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
 #[ts(export)]
 pub enum StrategyType {
     NakedSingle,

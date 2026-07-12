@@ -11,4 +11,7 @@ export type Action =
   | { type: 'getHint' }
   | { type: 'newGame'; difficulty: Difficulty }
   | { type: 'updateGameSettings'; settings: GameSettings }
-  | { type: 'setFinalTime'; seconds: number };
+  | { type: 'setFinalTime'; seconds: number }
+  | { type: 'autoNotes' }
+  | { type: 'clearNotes' }
+  | { type: 'applyHint' };

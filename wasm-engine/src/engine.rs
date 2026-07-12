@@ -636,12 +636,214 @@ mod tests {
         // Request a hint
         let state = reduce(state, Action::GetHint, &mut history);
         assert!(state.hint.is_some(), "Should return a hint");
-        let hint = state.hint.unwrap();
+        let hint = state.hint.clone().unwrap();
         assert!(hint.value >= 1 && hint.value <= 9, "Hint value should be 1-9");
         assert!(!hint.message_cn.is_empty(), "Hint should have Chinese explanation");
-        // Note: NakedSingle/HiddenSingle strategies have empty related_cells,
-        // while NakedPair/Pointing strategies include related cells.
-        // The hint is valid either way.
+
+        // Verify GetHint does NOT modify the board (SolverFallback no longer auto-fills)
+        let target_cell = &state.grid.cells[hint.target.row as usize][hint.target.col as usize];
+        assert_eq!(target_cell.value, 0,
+            "GetHint should not modify the board — cell should still be empty");
+
+        // Apply the hint explicitly
+        let state = reduce(state, Action::ApplyHint, &mut history);
+        let target_cell = &state.grid.cells[hint.target.row as usize][hint.target.col as usize];
+        assert_eq!(target_cell.value, hint.value,
+            "ApplyHint should fill the target cell with the hint value");
+
+        // After ApplyHint, hint should be consumed
+        assert!(state.hint.is_none(), "ApplyHint should clear the hint");
+    }
+
+    #[test]
+    fn test_e2e_auto_notes_fills_candidates() {
+        let state = create_game(Difficulty::Easy, 42);
+        let mut history = History::new();
+
+        // Find an empty cell and verify it has no notes initially
+        let (er, ec) = find_empty_cell(&state.grid).unwrap();
+        assert!(state.grid.cells[er as usize][ec as usize].notes.is_empty());
+
+        // Dispatch AutoNotes
+        let state = reduce(state, Action::AutoNotes, &mut history);
+
+        // The empty cell should now have candidates computed
+        let cell = &state.grid.cells[er as usize][ec as usize];
+        assert!(!cell.notes.is_empty(), "AutoNotes should fill candidates for empty cells");
+
+        // All notes should be valid candidates (1-9, no duplicates)
+        for &n in &cell.notes {
+            assert!(n >= 1 && n <= 9, "Note value {} out of range", n);
+        }
+        let mut sorted = cell.notes.clone();
+        sorted.sort_unstable();
+        sorted.dedup();
+        assert_eq!(cell.notes.len(), sorted.len(), "Notes should not contain duplicates");
+
+        // A given cell should not have been affected
+        let mut found_given = None;
+        for r in 0..9u8 {
+            for c in 0..9u8 {
+                if state.grid.cells[r as usize][c as usize].is_given {
+                    found_given = Some((r, c));
+                    break;
+                }
+            }
+            if found_given.is_some() { break; }
+        }
+        if let Some((gr, gc)) = found_given {
+            assert!(state.grid.cells[gr as usize][gc as usize].notes.is_empty(),
+                "Given cells should not get notes");
+        }
+    }
+
+    #[test]
+    fn test_e2e_clear_notes_removes_all_notes() {
+        let state = create_game(Difficulty::Easy, 42);
+        let mut history = History::new();
+
+        // First populate notes via AutoNotes
+        let state = reduce(state, Action::AutoNotes, &mut history);
+
+        // Verify at least some cells have notes
+        let has_notes = state.grid.cells.iter().flatten().any(|c| !c.notes.is_empty());
+        assert!(has_notes, "AutoNotes should produce some notes");
+
+        // Clear notes
+        let state = reduce(state, Action::ClearNotes, &mut history);
+
+        // All cells should have empty notes
+        for r in 0..9 {
+            for c in 0..9 {
+                assert!(state.grid.cells[r][c].notes.is_empty(),
+                    "Cell ({},{}) still has notes after ClearNotes", r, c);
+            }
+        }
+
+        // Existing values should be preserved
+        for r in 0..9 {
+            for c in 0..9 {
+                if state.grid.cells[r][c].is_given {
+                    assert_ne!(state.grid.cells[r][c].value, 0,
+                        "Given cell values preserved");
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_e2e_apply_hint_fill_type() {
+        // Create a grid where we can get a NakedSingle hint
+        let mut values = [[0u8; 9]; 9];
+        // Fill row 0 with 1-8 leaving col 8 for NakedSingle = 9
+        for c in 0..8 {
+            values[0][c] = (c + 1) as u8;
+        }
+        values[1][0] = 9; // block the box
+
+        let cells = core::array::from_fn::<_, 9, _>(|r| {
+            core::array::from_fn(|c| {
+                let v = values[r][c];
+                if v != 0 {
+                    Cell { value: v, notes: vec![], is_given: true, is_error: false }
+                } else {
+                    Cell { value: 0, notes: vec![], is_given: false, is_error: false }
+                }
+            })
+        });
+
+        let grid = Grid {
+            cells,
+            selected: Some(Pos { row: 0, col: 8 }),
+            selected_number: None,
+            highlights: Highlights::empty(),
+        };
+
+        let state = GameState {
+            grid,
+            difficulty: Difficulty::Easy,
+            solution: [[0u8; 9]; 9],
+            error_count: 0,
+            max_errors: 3,
+            game_status: GameStatus::Playing,
+            elapsed_seconds: 0,
+            settings: GameSettings::default(),
+            hint: None,
+        };
+
+        let mut history = History::new();
+
+        // Get hint — should be NakedSingle
+        let state = reduce(state, Action::GetHint, &mut history);
+        assert!(state.hint.is_some());
+        assert_eq!(state.hint.as_ref().unwrap().strategy, StrategyType::NakedSingle);
+
+        // Board should NOT be modified yet
+        assert_eq!(state.grid.cells[0][8].value, 0);
+
+        // Apply the hint
+        let state = reduce(state, Action::ApplyHint, &mut history);
+        assert_eq!(state.grid.cells[0][8].value, 9,
+            "ApplyHint should fill NakedSingle target");
+        assert!(state.hint.is_none(), "Hint consumed after ApplyHint");
+    }
+
+    #[test]
+    fn test_e2e_apply_hint_elimination_type() {
+        let state = create_game(Difficulty::Easy, 42);
+        let mut history = History::new();
+
+        // Populate notes via AutoNotes
+        let state = reduce(state, Action::AutoNotes, &mut history);
+
+        // Get a hint
+        let state = reduce(state, Action::GetHint, &mut history);
+        assert!(state.hint.is_some(), "Should have a hint");
+
+        let hint = state.hint.clone().unwrap();
+        let strategy = hint.strategy;
+
+        // If this is an elimination-type hint, verify ApplyHint removes candidates
+        match strategy {
+            StrategyType::NakedPair | StrategyType::HiddenPair
+            | StrategyType::Pointing | StrategyType::BoxLineReduction
+            | StrategyType::XWing => {
+                // Record eliminated candidates in related cells before applying
+                let before: Vec<(usize, usize, Vec<u8>)> = hint.related_cells.iter().map(|p| {
+                    let cell = &state.grid.cells[p.row as usize][p.col as usize];
+                    (p.row as usize, p.col as usize, cell.notes.clone())
+                }).collect();
+
+                let state = reduce(state, Action::ApplyHint, &mut history);
+
+                // After applying, the eliminated candidates should be removed
+                for (r, c, _) in &before {
+                    let cell = &state.grid.cells[*r][*c];
+                    for &elim in &hint.eliminated {
+                        assert!(!cell.notes.contains(&elim),
+                            "Cell ({},{}) should have eliminated {} after ApplyHint",
+                            r, c, elim);
+                    }
+                }
+
+                assert!(state.hint.is_none(), "Hint consumed after ApplyHint");
+            }
+            _ => {
+                // Fill-type — just verify hint is consumed
+                let state = reduce(state, Action::ApplyHint, &mut history);
+                assert!(state.hint.is_none(), "Hint consumed after ApplyHint");
+            }
+        }
+    }
+
+    #[test]
+    fn test_apply_hint_without_get_hint_is_noop() {
+        let state = create_game(Difficulty::Easy, 42);
+        let mut history = History::new();
+
+        assert!(state.hint.is_none(), "Fresh game should have no hint");
+        let state = reduce(state, Action::ApplyHint, &mut history);
+        assert!(state.hint.is_none(), "ApplyHint with no hint should be no-op");
     }
 
     #[test]
