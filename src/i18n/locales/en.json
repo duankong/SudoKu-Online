@@ -18,7 +18,9 @@
     "hard_desc": "Needs some skill",
     "expert": "Expert",
     "expert_desc": "Hardcore challenge",
-    "progress": "{{progress}}% complete"
+    "progress": "{{progress}}% complete",
+    "continueBtn": "Continue",
+    "newPuzzle": "New Puzzle"
   },
   "game": {
     "undo": "Undo",

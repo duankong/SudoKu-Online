@@ -203,7 +203,7 @@ export function Game() {
 
   return (
     <div className="flex flex-col h-screen bg-bg-board">
-      {/* Status bar — full width at top */}
+      {/* Status bar */}
       <StatusBar
         difficulty={state.difficulty}
         errorCount={state.error_count}
@@ -214,109 +214,45 @@ export function Game() {
         onBack={handleHome}
       />
 
-      {/* === Main area: board + sidebar === */}
-      <div className="flex-1 flex flex-col md:flex-row items-center md:items-start justify-center md:gap-8 md:p-6 overflow-auto">
+      {/* Toolbar */}
+      <Toolbar
+        onUndo={handleUndo}
+        onRedo={handleRedo}
+        onAutoNotes={handleAutoNotes}
+        onHint={handleHint}
+        autoNotesActive={autoNotesActive}
+        disabled={disabled}
+      />
 
-        {/* Left: Grid Board */}
-        <div className="flex-shrink-0 w-full max-w-[580px] px-2 pt-2 md:px-0 md:pt-0">
-          <GridBoard
-            grid={state.grid}
-            highlights={state.grid.highlights}
-            selectedNumber={state.grid.selected_number}
-            onSelectCell={handleSelectCell}
-          />
-        </div>
-
-        {/* Right: Controls sidebar (hidden on small screens) */}
-        <div className="hidden md:flex flex-col w-72 gap-4 shrink-0">
-          {/* Inline status */}
-          <div className="bg-white rounded-2xl border border-border p-4">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-semibold text-ink-dark capitalize">{state.difficulty}</span>
-              <div className="flex items-center gap-3">
-                <span className="text-xs text-ink-mid tabular-nums">
-                  {t('statusBar.errors', { count: state.error_count, max: state.max_errors })}
-                </span>
-                {state.settings.show_timer && (
-                  <span className="text-sm font-mono tabular-nums text-ink-dark">
-                    {timer.format()}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Toolbar */}
-            <Toolbar
-              onUndo={handleUndo}
-              onRedo={handleRedo}
-              onAutoNotes={handleAutoNotes}
-              onHint={handleHint}
-              autoNotesActive={autoNotesActive}
-              disabled={disabled}
-            />
-          </div>
-
-          {/* Number pad */}
-          <div className="bg-white rounded-2xl border border-border p-4">
-            <NumberPad
-              onNumber={handleNumber}
-              onErase={handleErase}
-              onToggleNote={handleToggleNote}
-              selectedCellNotes={selectedCellNotes}
-              hasSelectedValue={hasSelectedValue}
-              disabled={disabled}
-            />
-          </div>
-
-          {/* Hint panel (inline, shown when hint is active) */}
-          {showHint && state.hint && (
-            <div className="bg-white rounded-2xl border border-border p-4 shadow-sm">
-              <HintDrawer
-                hint={state.hint}
-                visible={true}
-                onClose={() => setShowHint(false)}
-                onApplyHint={handleApplyHint}
-                inline
-              />
-            </div>
-          )}
-        </div>
+      {/* Grid board — centered */}
+      <div className="flex-1 flex items-start justify-center px-2 pt-2 pb-1">
+        <GridBoard
+          grid={state.grid}
+          highlights={state.grid.highlights}
+          selectedNumber={state.grid.selected_number}
+          onSelectCell={handleSelectCell}
+        />
       </div>
 
-      {/* Mobile controls (below board on small screens) */}
-      <div className="md:hidden">
-        {/* Toolbar */}
-        <Toolbar
-          onUndo={handleUndo}
-          onRedo={handleRedo}
-          onAutoNotes={handleAutoNotes}
-          onHint={handleHint}
-          autoNotesActive={autoNotesActive}
+      {/* Number pad */}
+      <div className="pb-4 pt-1">
+        <NumberPad
+          onNumber={handleNumber}
+          onErase={handleErase}
+          onToggleNote={handleToggleNote}
+          selectedCellNotes={selectedCellNotes}
+          hasSelectedValue={hasSelectedValue}
           disabled={disabled}
         />
-
-        {/* Number pad */}
-        <div className="pb-4 pt-1">
-          <NumberPad
-            onNumber={handleNumber}
-            onErase={handleErase}
-            onToggleNote={handleToggleNote}
-            selectedCellNotes={selectedCellNotes}
-            hasSelectedValue={hasSelectedValue}
-            disabled={disabled}
-          />
-        </div>
       </div>
 
-      {/* Mobile Hint drawer (bottom sheet) */}
-      <div className="md:hidden">
-        <HintDrawer
-          hint={state.hint}
-          visible={showHint}
-          onClose={() => setShowHint(false)}
-          onApplyHint={handleApplyHint}
-        />
-      </div>
+      {/* Hint drawer — bottom sheet */}
+      <HintDrawer
+        hint={state.hint}
+        visible={showHint}
+        onClose={() => setShowHint(false)}
+        onApplyHint={handleApplyHint}
+      />
 
       {/* Game over dialog */}
       {gameOver && (

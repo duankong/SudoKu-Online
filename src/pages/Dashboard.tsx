@@ -34,7 +34,6 @@ export function updateDailyStreak() {
   const yesterday = getLocalDateString(new Date(Date.now() - 86400000));
 
   if (progress.lastCompletedDate === today) {
-    // Already completed today — no change
     return;
   }
 
@@ -57,6 +56,12 @@ const DIFFICULTIES: { key: Difficulty; labelKey: string; descKey: string; color:
   { key: 'Hard', labelKey: 'dashboard.hard', descKey: 'dashboard.hard_desc', color: 'bg-orange-100 text-orange-700 border-orange-200' },
   { key: 'Expert', labelKey: 'dashboard.expert', descKey: 'dashboard.expert_desc', color: 'bg-red-100 text-red-700 border-red-200' },
 ];
+
+function formatTime(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
 
 function SaveThumbnail({ cells }: { cells: any[][] }) {
   return (
@@ -99,6 +104,88 @@ function SaveThumbnail({ cells }: { cells: any[][] }) {
   );
 }
 
+interface SaveInfo {
+  difficulty: string;
+  progress: number;
+}
+
+function ContinueCard({
+  savedState,
+  saveInfo,
+  onContinue,
+  onNewPuzzle,
+  t,
+}: {
+  savedState: any;
+  saveInfo: SaveInfo;
+  onContinue: () => void;
+  onNewPuzzle: () => void;
+  t: (key: string, opts?: any) => string;
+}) {
+  const diffLabel = t(`dashboard.${saveInfo.difficulty.toLowerCase()}`, saveInfo.difficulty);
+  const timerStr = formatTime(savedState.elapsed_seconds ?? 0);
+
+  return (
+    <div className="flex-1 bg-white rounded-2xl shadow-sm border border-border p-5">
+      <div className="flex gap-4">
+        {/* Left: text content */}
+        <div className="flex-1 min-w-0">
+          {/* Icon + Title row */}
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shrink-0">
+              <span className="text-white font-bold text-lg leading-none">#</span>
+            </div>
+            <h3 className="text-lg font-bold text-ink-dark truncate">
+              {t('dashboard.continue')}
+            </h3>
+          </div>
+
+          {/* Difficulty · Timer */}
+          <p className="text-sm text-ink-mid mb-3">
+            {diffLabel} · {timerStr}
+          </p>
+
+          {/* Progress bar + percent */}
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-primary rounded-full transition-all duration-300"
+                style={{ width: `${saveInfo.progress}%` }}
+              />
+            </div>
+            <span className="text-sm font-bold text-primary tabular-nums shrink-0">
+              {saveInfo.progress}%
+            </span>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex gap-2">
+            <button
+              onClick={onContinue}
+              className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold
+                         hover:bg-primary/90 active:scale-[0.98] transition-all"
+            >
+              {t('dashboard.continueBtn')}
+            </button>
+            <button
+              onClick={onNewPuzzle}
+              className="flex-[0_0_auto] py-2.5 px-4 rounded-xl border border-border text-sm font-semibold text-ink-mid
+                         hover:bg-gray-50 active:scale-[0.98] transition-all"
+            >
+              {t('dashboard.newPuzzle')}
+            </button>
+          </div>
+        </div>
+
+        {/* Right: Mini sudoku thumbnail */}
+        <div className="w-[92px] shrink-0 self-start">
+          <SaveThumbnail cells={savedState.grid.cells} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function Dashboard() {
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -122,7 +209,7 @@ export function Dashboard() {
     <div className="min-h-screen bg-white max-w-4xl mx-auto flex flex-col px-6 py-8 md:py-12">
       {/* Header with crown and gear */}
       <div className="flex items-center justify-between mb-10">
-        <div className="flex-1" /> {/* spacer */}
+        <div className="flex-1" />
         <div className="text-center">
           <h1 className="text-3xl font-bold text-ink-dark tracking-tight">{t('app.title')}</h1>
           <p className="text-sm text-ink-mid mt-1">{t('app.subtitle')}</p>
@@ -139,41 +226,37 @@ export function Dashboard() {
         </div>
       </div>
 
-      {/* Top row: Continue Puzzle + Daily Challenge (side by side on desktop) */}
+      {/* Top row: Continue Puzzle + Daily Challenge */}
       <div className="flex flex-col md:flex-row gap-4 mb-8">
-        {/* Continue Puzzle */}
+        {/* Continue Puzzle — redesigned card */}
         {hasSave && saveInfo && savedState && (
-          <button
-            onClick={() => navigate('/game?mode=continue')}
-            className="flex-1 p-4 rounded-2xl bg-bg-board border border-border text-left
-                       hover:bg-gray-100 active:scale-[0.98] transition-all"
-          >
-            <div className="text-sm font-medium text-ink-dark mb-2">{t('dashboard.continue')}</div>
-            <div className="flex gap-4 items-center">
-              <div className="w-20 h-20 flex-shrink-0">
-                <SaveThumbnail cells={savedState.grid.cells} />
-              </div>
-              <div className="text-left">
-                <div className="text-sm font-semibold text-ink-dark">
-                  {t(`dashboard.${saveInfo.difficulty.toLowerCase()}`, saveInfo.difficulty)}
-                </div>
-                <div className="text-xs text-ink-mid mt-0.5">
-                  {t('dashboard.progress', { progress: saveInfo.progress })}
-                </div>
-              </div>
-            </div>
-          </button>
+          <ContinueCard
+            savedState={savedState}
+            saveInfo={saveInfo}
+            onContinue={() => navigate('/game?mode=continue')}
+            onNewPuzzle={() => {
+              const diff = savedState?.difficulty || 'Easy';
+              try { localStorage.removeItem('sudokucalm-save'); } catch { /* ignore */ }
+              navigate(`/game?difficulty=${diff}`);
+            }}
+            t={t}
+          />
         )}
 
         {/* Daily Challenge */}
         <button
           onClick={() => navigate('/game?mode=daily')}
-          className="flex-1 p-4 rounded-2xl bg-accent/15 border border-accent/30 text-left
+          className="flex-1 p-5 rounded-2xl bg-accent/15 border border-accent/30 text-left
                      hover:bg-accent/25 active:scale-[0.98] transition-all"
         >
-          <div className="text-sm font-medium text-ink-dark">{t('dashboard.daily')}</div>
-          <div className="mt-1 flex items-center justify-between">
-            <span className="text-lg font-semibold text-ink-dark">{today}</span>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 rounded-xl bg-accent/30 flex items-center justify-center shrink-0">
+              <span className="text-lg leading-none">📅</span>
+            </div>
+            <h3 className="text-lg font-bold text-ink-dark">{t('dashboard.daily')}</h3>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-ink-mid">{today}</span>
             {dailyCompleted ? (
               <span className="text-xs font-medium text-green-600 bg-green-100 px-2 py-0.5 rounded-full">
                 {dailyProgress.streak > 0

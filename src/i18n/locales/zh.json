@@ -17,7 +17,9 @@
     "hard_desc": "需要一定技巧",
     "expert": "专家",
     "expert_desc": "高难度挑战",
-    "progress": "进度 {{progress}}%"
+    "progress": "进度 {{progress}}%",
+    "continueBtn": "继续",
+    "newPuzzle": "新谜题"
   },
   "game": {
     "undo": "撤销",
