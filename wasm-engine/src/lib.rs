@@ -1,5 +1,6 @@
 use wasm_bindgen::prelude::*;
 
+pub mod generator;
 mod grid;
 pub mod highlight;
 pub mod history;
