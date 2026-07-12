@@ -139,4 +139,5 @@ pub enum Action {
     AutoNotes,
     ClearNotes,
     ApplyHint,
+    ResetPuzzle,
 }

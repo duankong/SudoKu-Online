@@ -7,6 +7,7 @@ export interface Timer {
   pause: () => void;
   resume: () => void;
   reset: () => void;
+  sync: (seconds: number) => void;
   format: () => string;
 }
 
@@ -37,17 +38,22 @@ export function useTimer(initialSeconds: number = 0): Timer {
   }, [clearTimer]);
 
   const resume = useCallback(() => {
+    if (running) return;
     setRunning(true);
     intervalRef.current = setInterval(() => {
       setSeconds((s) => s + 1);
     }, 1000);
-  }, []);
+  }, [running]);
 
   const reset = useCallback(() => {
     clearTimer();
     setSeconds(0);
     setRunning(false);
   }, [clearTimer]);
+
+  const sync = useCallback((s: number) => {
+    setSeconds(s);
+  }, []);
 
   const format = useCallback((): string => {
     const m = Math.floor(seconds / 60);
@@ -60,5 +66,5 @@ export function useTimer(initialSeconds: number = 0): Timer {
     return () => clearTimer();
   }, [clearTimer]);
 
-  return { seconds, running, start, pause, resume, reset, format };
+  return { seconds, running, start, pause, resume, reset, sync, format };
 }

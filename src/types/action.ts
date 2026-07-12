@@ -14,4 +14,5 @@ export type Action =
   | { type: 'setFinalTime'; seconds: number }
   | { type: 'autoNotes' }
   | { type: 'clearNotes' }
-  | { type: 'applyHint' };
+  | { type: 'applyHint' }
+  | { type: 'resetPuzzle' };

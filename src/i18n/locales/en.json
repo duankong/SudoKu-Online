@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Sudoku Calm",
+    "title": "Sudoku Online",
     "subtitle": "Focus · Immerse · Logic"
   },
   "dashboard": {
@@ -20,7 +20,13 @@
     "expert_desc": "Hardcore challenge",
     "progress": "{{progress}}% complete",
     "continueBtn": "Continue",
-    "newPuzzle": "New Puzzle"
+    "newPuzzle": "New Puzzle",
+    "noPuzzle": "No puzzle in progress",
+    "daily_difficulty": "Difficulty",
+    "daily_duration": "15–20 min",
+    "daily_streak": "{{count}}-day streak",
+    "daily_btn": "Continue Challenge",
+    "daily_completed_btn": "Play Again"
   },
   "game": {
     "undo": "Undo",
@@ -52,7 +58,7 @@
     "sound_desc": "Play sound effects",
     "haptics": "Haptics",
     "haptics_desc": "Device vibration feedback",
-    "about": "Sudoku Calm v0.1.0 · Built with React + Rust WASM"
+    "about": "Sudoku Online v0.1.0 · Built with React + Rust WASM"
   },
   "gameSettings": {
     "title": "Game Settings",
@@ -70,6 +76,7 @@
     "lost": "Game Over",
     "won_desc": "You completed the puzzle!",
     "lost_desc": "Too many mistakes",
+    "retry": "Retry This Puzzle",
     "newGame": "New Game",
     "home": "Back to Home"
   }

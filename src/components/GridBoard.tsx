@@ -5,14 +5,12 @@ import type { Grid, Highlights, Pos } from '../types/generated';
 interface GridBoardProps {
   grid: Grid;
   highlights: Highlights;
-  selectedNumber: number | null;
   onSelectCell: (row: number, col: number) => void;
 }
 
 export const GridBoard = React.memo(function GridBoard({
   grid,
   highlights,
-  selectedNumber,
   onSelectCell,
 }: GridBoardProps) {
   const selected = grid.selected;
@@ -21,6 +19,10 @@ export const GridBoard = React.memo(function GridBoard({
   const relatedSet = useMemo(
     () => new Set(highlights.related_area.map((p: Pos) => `${p.row},${p.col}`)),
     [highlights.related_area],
+  );
+  const sameNumberSet = useMemo(
+    () => new Set(highlights.same_number.map((p: Pos) => `${p.row},${p.col}`)),
+    [highlights.same_number],
   );
   const hintSet = useMemo(
     () => new Set(highlights.hint_cells.map((p: Pos) => `${p.row},${p.col}`)),
@@ -37,16 +39,14 @@ export const GridBoard = React.memo(function GridBoard({
 
   // Build grid with 3x3 box borders
   return (
-    <div className="w-full">
+    <div className="w-full max-w-[500px] mx-auto">
       <div
-        className="rounded-2xl overflow-hidden shadow-md"
+        className="rounded-lg overflow-hidden shadow-md"
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(9, 1fr)',
           border: '2.5px solid #3654D2',
-          backgroundColor: '#3654D2',
-          gap: '0.5px',
-          padding: '0',
+          backgroundColor: '#FFFFFF',
         }}
       >
         {grid.cells.map((row, r) =>
@@ -55,18 +55,14 @@ export const GridBoard = React.memo(function GridBoard({
             const isSelected = selected?.row === r && selected?.col === c;
             const posKey = `${r},${c}`;
 
-            // Box-border logic: draw thicker separators between 3x3 boxes
+            // Box-border logic: thick separators between 3x3 boxes, thin between cells
+            // Use only borderRight and borderBottom to avoid double borders
             const isBoxRight = (c + 1) % 3 === 0 && c !== 8;
             const isBoxBottom = (r + 1) % 3 === 0 && r !== 8;
-            const isBoxLeft = c % 3 === 0 && c !== 0;
-            const isBoxTop = r % 3 === 0 && r !== 0;
 
-            // Build inline border styles for fine-grained control
             const borderStyle: React.CSSProperties = {
               borderRight: isBoxRight ? '2.5px solid #3654D2' : '0.5px solid #D0D7E5',
               borderBottom: isBoxBottom ? '2.5px solid #3654D2' : '0.5px solid #D0D7E5',
-              borderLeft: isBoxLeft ? '2.5px solid #3654D2' : '0.5px solid #D0D7E5',
-              borderTop: isBoxTop ? '2.5px solid #3654D2' : '0.5px solid #D0D7E5',
             };
 
             return (
@@ -77,9 +73,9 @@ export const GridBoard = React.memo(function GridBoard({
                   col={c}
                   isSelected={isSelected}
                   isRelated={relatedSet.has(posKey)}
+                  isSameNumber={sameNumberSet.has(posKey)}
                   isHint={hintSet.has(posKey)}
                   isError={errorSet.has(posKey)}
-                  selectedNumber={selectedNumber}
                   onSelect={handleSelect}
                 />
               </div>

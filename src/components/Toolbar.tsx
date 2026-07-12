@@ -1,4 +1,4 @@
-import { Undo2, Redo2, Pencil, Lightbulb } from 'lucide-react';
+import { Undo2, Redo2, Pencil, Eraser, Lightbulb } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 interface ToolbarProps {
@@ -6,11 +6,11 @@ interface ToolbarProps {
   onRedo: () => void;
   onAutoNotes: () => void;
   onHint: () => void;
-  autoNotesActive: boolean;
+  hasNotes: boolean;
   disabled: boolean;
 }
 
-export function Toolbar({ onUndo, onRedo, onAutoNotes, onHint, autoNotesActive, disabled }: ToolbarProps) {
+export function Toolbar({ onUndo, onRedo, onAutoNotes, onHint, hasNotes, disabled }: ToolbarProps) {
   const { t } = useTranslation();
 
   const btnClass = `
@@ -19,6 +19,7 @@ export function Toolbar({ onUndo, onRedo, onAutoNotes, onHint, autoNotesActive, 
     transition-all duration-75
     disabled:opacity-30 disabled:cursor-not-allowed
     active:scale-95
+    text-ink-mid hover:bg-primary-pale hover:text-primary
   `;
 
   return (
@@ -26,7 +27,7 @@ export function Toolbar({ onUndo, onRedo, onAutoNotes, onHint, autoNotesActive, 
       <button
         onClick={onUndo}
         disabled={disabled}
-        className={`${btnClass} text-ink-mid hover:bg-primary-pale hover:text-primary`}
+        className={btnClass}
         aria-label={t('game.undo')}
       >
         <Undo2 size={18} />
@@ -36,7 +37,7 @@ export function Toolbar({ onUndo, onRedo, onAutoNotes, onHint, autoNotesActive, 
       <button
         onClick={onRedo}
         disabled={disabled}
-        className={`${btnClass} text-ink-mid hover:bg-primary-pale hover:text-primary`}
+        className={btnClass}
         aria-label={t('game.redo')}
       >
         <Redo2 size={18} />
@@ -46,21 +47,17 @@ export function Toolbar({ onUndo, onRedo, onAutoNotes, onHint, autoNotesActive, 
       <button
         onClick={onAutoNotes}
         disabled={disabled}
-        className={`${btnClass} ${
-          autoNotesActive
-            ? 'bg-primary text-white hover:bg-primary/90'
-            : 'text-ink-mid hover:bg-primary-pale hover:text-primary'
-        }`}
-        aria-label={autoNotesActive ? t('game.clearNotes') : t('game.autoNotes')}
+        className={btnClass}
+        aria-label={hasNotes ? t('game.clearNotes') : t('game.autoNotes')}
       >
-        <Pencil size={18} />
-        <span>{autoNotesActive ? t('game.clearNotes') : t('game.autoNotes')}</span>
+        {hasNotes ? <Eraser size={18} /> : <Pencil size={18} />}
+        <span>{hasNotes ? t('game.clearNotes') : t('game.autoNotes')}</span>
       </button>
 
       <button
         onClick={onHint}
         disabled={disabled}
-        className={`${btnClass} text-ink-mid hover:bg-primary-pale hover:text-primary`}
+        className={btnClass}
         aria-label={t('game.hint')}
       >
         <Lightbulb size={18} />

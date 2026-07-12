@@ -1,8 +1,3 @@
-export interface UISettings {
-  sound: boolean;
-  haptics: boolean;
-}
-
 export type {
   Cell,
   Pos,

@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Sudoku Calm",
+    "title": "Sudoku Online",
     "subtitle": "专注 · 沉浸 · 逻辑之美"
   },
   "dashboard": {
@@ -19,7 +19,13 @@
     "expert_desc": "高难度挑战",
     "progress": "进度 {{progress}}%",
     "continueBtn": "继续",
-    "newPuzzle": "新谜题"
+    "newPuzzle": "新谜题",
+    "noPuzzle": "暂无进行中的谜题",
+    "daily_difficulty": "难度",
+    "daily_duration": "15-20分钟",
+    "daily_streak": "连续{{count}}天",
+    "daily_btn": "继续挑战",
+    "daily_completed_btn": "再来一局"
   },
   "game": {
     "undo": "撤销",
@@ -51,7 +57,7 @@
     "sound_desc": "操作时播放音效反馈",
     "haptics": "震动反馈",
     "haptics_desc": "操作时触发设备震动",
-    "about": "Sudoku Calm v0.1.0 · Built with React + Rust WASM"
+    "about": "Sudoku Online v0.1.0 · Built with React + Rust WASM"
   },
   "gameSettings": {
     "title": "游戏设置",
@@ -69,6 +75,7 @@
     "lost": "游戏结束",
     "won_desc": "你完成了这道数独！",
     "lost_desc": "错误次数已用完",
+    "retry": "重玩此局",
     "newGame": "再来一局",
     "home": "返回首页"
   }

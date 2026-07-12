@@ -30,6 +30,11 @@ impl History {
         self.undo_stack.push(next.clone());
         Some(next)
     }
+
+    pub fn clear(&mut self) {
+        self.undo_stack.clear();
+        self.redo_stack.clear();
+    }
 }
 
 #[cfg(test)]

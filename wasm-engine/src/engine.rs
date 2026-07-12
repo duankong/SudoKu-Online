@@ -107,6 +107,7 @@ pub fn reduce(state: GameState, action: Action, history: &mut History) -> GameSt
         Action::AutoNotes => handle_auto_notes(state, history),
         Action::ClearNotes => handle_clear_notes(state, history),
         Action::ApplyHint => handle_apply_hint(state, history),
+        Action::ResetPuzzle => handle_reset_puzzle(state, history),
     }
 }
 
@@ -155,6 +156,7 @@ fn handle_input_number(mut state: GameState, value: u8, history: &mut History) -
     // Set the value
     state.grid.cells[sel.row as usize][sel.col as usize].value = value;
     state.grid.cells[sel.row as usize][sel.col as usize].notes.clear();
+    state.grid.selected_number = Some(value);
 
     // Check for conflicts (clear previous errors first)
     for r in 0..9usize {
@@ -242,6 +244,7 @@ fn handle_erase(mut state: GameState, history: &mut History) -> GameState {
     } else if cell.value != 0 {
         cell.value = 0;
         cell.is_error = false;
+        state.grid.selected_number = None;
     }
 
     // Recompute highlights
@@ -404,6 +407,29 @@ fn handle_apply_hint(mut state: GameState, history: &mut History) -> GameState {
     }
 
     // hint is already cleared via .take() above
+    state
+}
+
+fn handle_reset_puzzle(mut state: GameState, history: &mut History) -> GameState {
+    // Clear all non-given cells to start fresh with the same puzzle
+    for r in 0..9usize {
+        for c in 0..9usize {
+            if !state.grid.cells[r][c].is_given {
+                state.grid.cells[r][c].value = 0;
+                state.grid.cells[r][c].notes.clear();
+                state.grid.cells[r][c].is_error = false;
+            }
+        }
+    }
+    state.grid.selected = None;
+    state.grid.selected_number = None;
+    state.error_count = 0;
+    state.game_status = GameStatus::Playing;
+    state.elapsed_seconds = 0;
+    state.hint = None;
+    history.clear();
+    let highlights = compute_highlights(&state.grid, &state.settings, &[]);
+    state.grid.highlights = highlights;
     state
 }
 
