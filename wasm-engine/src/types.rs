@@ -8,7 +8,7 @@ pub struct Pos {
     pub col: u8,
 }
 
-#[derive(Clone, Serialize, Deserialize, TS)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
 #[ts(export)]
 pub struct Cell {
     pub value: u8,

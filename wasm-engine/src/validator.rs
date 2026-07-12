@@ -30,7 +30,7 @@ pub fn check_game_status(
     error_count: u8,
     max_errors: u8,
 ) -> GameStatus {
-    if error_count > max_errors {
+    if error_count >= max_errors {
         return GameStatus::Lost;
     }
     for r in 0..9 {

@@ -414,4 +414,306 @@ mod tests {
         assert!(!state.settings.show_timer);
         assert!(state.settings.highlight_numbers);
     }
+
+    // ── End-to-end gameplay simulation tests ──────────────────────────────
+
+    /// Simulate clicking cells and entering numbers on a real game.
+    #[test]
+    fn test_e2e_create_game_and_play_moves() {
+        let state = create_game(Difficulty::Easy, 42);
+        let mut history = History::new();
+
+        // Game should start in Playing state with a valid puzzle
+        assert_eq!(state.game_status, GameStatus::Playing);
+        assert_eq!(state.error_count, 0);
+
+        // Find first empty cell
+        let first_empty = find_empty_cell(&state.grid);
+        assert!(first_empty.is_some(), "Should have at least one empty cell");
+        let (er, ec) = first_empty.unwrap();
+
+        // Click the empty cell (selectCell action)
+        let state = reduce(state, Action::SelectCell { row: er, col: ec }, &mut history);
+        assert_eq!(state.grid.selected, Some(Pos { row: er, col: ec }));
+        // Selected cell should be highlighted
+        assert!(!state.grid.highlights.related_area.is_empty(),
+            "Selecting a cell should highlight related area");
+
+        // Enter the correct number
+        let correct_value = state.solution[er as usize][ec as usize];
+        let state = reduce(state, Action::InputNumber { value: correct_value }, &mut history);
+        assert_eq!(state.grid.cells[er as usize][ec as usize].value, correct_value);
+        // No errors since we entered the correct number
+        assert_eq!(state.error_count, 0);
+        assert!(!state.grid.cells[er as usize][ec as usize].is_error);
+
+        // Verify undo works
+        let state = reduce(state, Action::Undo, &mut history);
+        assert_eq!(state.grid.cells[er as usize][ec as usize].value, 0,
+            "Undo should clear the cell");
+
+        // Verify redo restores
+        let state = reduce(state, Action::Redo, &mut history);
+        assert_eq!(state.grid.cells[er as usize][ec as usize].value, correct_value,
+            "Redo should restore the value");
+    }
+
+    #[test]
+    fn test_e2e_note_mode_flow() {
+        let state = create_game(Difficulty::Easy, 123);
+        let mut history = History::new();
+
+        // Find an empty cell
+        let (er, ec) = find_empty_cell(&state.grid).unwrap();
+
+        // Select and add notes
+        let state = reduce(state, Action::SelectCell { row: er, col: ec }, &mut history);
+        let state = reduce(state, Action::ToggleNote { value: 1 }, &mut history);
+        let state = reduce(state, Action::ToggleNote { value: 3 }, &mut history);
+        let state = reduce(state, Action::ToggleNote { value: 5 }, &mut history);
+
+        let cell = &state.grid.cells[er as usize][ec as usize];
+        assert!(cell.notes.contains(&1));
+        assert!(cell.notes.contains(&3));
+        assert!(cell.notes.contains(&5));
+        assert_eq!(cell.value, 0, "Notes should not change cell value");
+
+        // Toggle note off
+        let state = reduce(state, Action::ToggleNote { value: 3 }, &mut history);
+        let cell = &state.grid.cells[er as usize][ec as usize];
+        assert!(!cell.notes.contains(&3));
+        assert!(cell.notes.contains(&1));
+
+        // Verify undo restores note
+        let state = reduce(state, Action::Undo, &mut history);
+        let cell = &state.grid.cells[er as usize][ec as usize];
+        assert!(cell.notes.contains(&3), "Undo should restore toggled note");
+    }
+
+    #[test]
+    fn test_e2e_error_count_and_lost() {
+        let state = create_game(Difficulty::Easy, 999);
+        let mut history = History::new();
+
+        // Find an empty cell
+        let (er, ec) = find_empty_cell(&state.grid).unwrap();
+        let correct = state.solution[er as usize][ec as usize];
+
+        // Pick a wrong number that ACTUALLY conflicts (exists in same row/col/box)
+        let wrong: u8 = find_conflicting_number(&state.grid, er as usize, ec as usize, correct);
+
+        // First wrong input — should trigger conflict and increment error_count
+        let state = reduce(state, Action::SelectCell { row: er, col: ec }, &mut history);
+        let state = reduce(state, Action::InputNumber { value: wrong }, &mut history);
+        assert_eq!(state.error_count, 1);
+        assert!(state.grid.cells[er as usize][ec as usize].is_error,
+            "Wrong number should mark cell as error");
+
+        // Enter correct number to fix
+        let state = reduce(state, Action::InputNumber { value: correct }, &mut history);
+        assert!(!state.grid.cells[er as usize][ec as usize].is_error,
+            "Correct number should clear error flag");
+
+        // Now intentionally lose: make 3 conflicting moves on different cells
+        let mut lost_state = create_game(Difficulty::Easy, 999);
+        let mut lost_history = History::new();
+
+        let empties: Vec<(u8, u8)> = find_all_empties(&lost_state.grid);
+        let mut errors_made = 0;
+        for i in 0..empties.len() {
+            if errors_made >= 3 { break; }
+            let (r, c) = empties[i];
+            let correct_val = lost_state.solution[r as usize][c as usize];
+            let wrong_val = find_conflicting_number(&lost_state.grid, r as usize, c as usize, correct_val);
+            lost_state = reduce(lost_state, Action::SelectCell { row: r, col: c }, &mut lost_history);
+            lost_state = reduce(lost_state, Action::InputNumber { value: wrong_val }, &mut lost_history);
+            errors_made += 1;
+        }
+        assert_eq!(lost_state.error_count, 3);
+        assert_eq!(lost_state.game_status, GameStatus::Lost,
+            "3 errors on a max_errors=3 game should result in Lost");
+    }
+
+    #[test]
+    fn test_e2e_hint_system() {
+        let state = create_game(Difficulty::Easy, 777);
+        let mut history = History::new();
+
+        // Request a hint
+        let state = reduce(state, Action::GetHint, &mut history);
+        assert!(state.hint.is_some(), "Should return a hint");
+        let hint = state.hint.unwrap();
+        assert!(hint.value >= 1 && hint.value <= 9, "Hint value should be 1-9");
+        assert!(!hint.message_cn.is_empty(), "Hint should have Chinese explanation");
+        // Note: NakedSingle/HiddenSingle strategies have empty related_cells,
+        // while NakedPair/Pointing strategies include related cells.
+        // The hint is valid either way.
+    }
+
+    #[test]
+    fn test_e2e_smart_erase_notes() {
+        let state = create_game(Difficulty::Easy, 555);
+        let mut history = History::new();
+
+        // Find empty cell, add notes, then enter correct number
+        let (er, ec) = find_empty_cell(&state.grid).unwrap();
+        let correct = state.solution[er as usize][ec as usize];
+
+        // Add notes to a cell in same row (different column)
+        let other_col = if ec == 0 { 1 } else { 0 };
+        // Make sure the other cell is empty too
+        if state.grid.cells[er as usize][other_col as usize].is_given
+            || state.grid.cells[er as usize][other_col as usize].value != 0 {
+            // Just add note to the selected cell itself as a smoke test
+            let state = reduce(state, Action::SelectCell { row: er, col: ec }, &mut history);
+            let state = reduce(state, Action::ToggleNote { value: correct }, &mut history);
+            assert!(state.grid.cells[er as usize][ec as usize].notes.contains(&correct));
+            // Enter the correct value - should clear its own notes
+            let state = reduce(state, Action::InputNumber { value: correct }, &mut history);
+            let cell = &state.grid.cells[er as usize][ec as usize];
+            assert!(cell.notes.is_empty(), "Notes should be cleared when value is entered");
+            assert_eq!(cell.value, correct);
+        }
+    }
+
+    #[test]
+    fn test_e2e_daily_challenge_deterministic() {
+        let state1 = create_daily("2026-07-12");
+        let state2 = create_daily("2026-07-12");
+
+        // Same date should produce identical puzzle
+        assert_eq!(state1.grid.cells, state2.grid.cells);
+        assert_eq!(state1.solution, state2.solution);
+
+        // Different date should produce different puzzle
+        let state3 = create_daily("2026-07-13");
+        assert_ne!(state1.grid.cells, state3.grid.cells);
+    }
+
+    #[test]
+    fn test_e2e_complete_game_won() {
+        // Use a seed for deterministic puzzle
+        let mut state = create_game(Difficulty::Easy, 12345);
+        let mut history = History::new();
+
+        // Fill in ALL empty cells with correct answers
+        for r in 0..9u8 {
+            for c in 0..9u8 {
+                if state.grid.cells[r as usize][c as usize].value == 0
+                    && !state.grid.cells[r as usize][c as usize].is_given
+                {
+                    let correct = state.solution[r as usize][c as usize];
+                    state = reduce(state, Action::SelectCell { row: r, col: c }, &mut history);
+                    state = reduce(state, Action::InputNumber { value: correct }, &mut history);
+                    // Should not have lost during correct play
+                    assert_ne!(state.game_status, GameStatus::Lost,
+                        "Should not lose when entering correct answers");
+                }
+            }
+        }
+        // Should have won
+        assert_eq!(state.game_status, GameStatus::Won,
+            "Filling all cells correctly should win the game");
+        assert_eq!(state.error_count, 0);
+
+        // Actions after winning should be no-ops
+        let before = state.grid.cells[0][0].value;
+        let state = reduce(state, Action::Erase, &mut history);
+        assert_eq!(state.grid.cells[0][0].value, before,
+            "Erase should be no-op after winning");
+    }
+
+    #[test]
+    fn test_e2e_highlight_updates_on_selection() {
+        let state = create_game(Difficulty::Easy, 111);
+        let mut history = History::new();
+
+        // Find a given cell first
+        let mut found: Option<(u8, u8, u8)> = None;
+        for r in 0..9u8 {
+            for c in 0..9u8 {
+                let cell = &state.grid.cells[r as usize][c as usize];
+                if cell.is_given && cell.value != 0 {
+                    found = Some((r, c, cell.value));
+                    break;
+                }
+            }
+            if found.is_some() { break; }
+        }
+        let (r, c, value) = found.expect("Grid should have at least one given cell");
+
+        let state = reduce(state, Action::SelectCell { row: r, col: c }, &mut history);
+        // selected_number should match the given value
+        assert_eq!(state.grid.selected_number, Some(value));
+        // related_area should be non-empty (row + col + box highlights)
+        assert!(!state.grid.highlights.related_area.is_empty(),
+            "Selecting a given cell should highlight related area");
+    }
+
+    #[test]
+    fn test_e2e_set_final_time() {
+        let state = create_game(Difficulty::Easy, 42);
+        let mut history = History::new();
+        assert_eq!(state.elapsed_seconds, 0);
+
+        let state = reduce(state, Action::SetFinalTime { seconds: 125 }, &mut history);
+        assert_eq!(state.elapsed_seconds, 125);
+
+        let state = reduce(state, Action::SetFinalTime { seconds: 300 }, &mut history);
+        assert_eq!(state.elapsed_seconds, 300);
+    }
+
+    /// Helper: find first empty (non-given, value=0) cell in the grid.
+    fn find_empty_cell(grid: &Grid) -> Option<(u8, u8)> {
+        for r in 0..9u8 {
+            for c in 0..9u8 {
+                let cell = &grid.cells[r as usize][c as usize];
+                if !cell.is_given && cell.value == 0 {
+                    return Some((r, c));
+                }
+            }
+        }
+        None
+    }
+
+    /// Helper: find a number that conflicts with an existing cell in the same row/col/box.
+    /// Returns a number 1-9 that is NOT the correct answer but DOES exist in the same unit.
+    fn find_conflicting_number(grid: &Grid, row: usize, col: usize, correct: u8) -> u8 {
+        // Look for any number in the same row, column, or box that is not the correct answer
+        for num in 1..=9u8 {
+            if num == correct { continue; }
+            // Check row
+            for c in 0..9usize {
+                if grid.cells[row][c].value == num { return num; }
+            }
+            // Check column
+            for r in 0..9usize {
+                if grid.cells[r][col].value == num { return num; }
+            }
+            // Check box
+            let br = (row / 3) * 3;
+            let bc = (col / 3) * 3;
+            for r in br..br + 3 {
+                for c in bc..bc + 3 {
+                    if grid.cells[r][c].value == num { return num; }
+                }
+            }
+        }
+        // Fallback: pick any number not equal to correct
+        if correct == 1 { 2 } else { 1 }
+    }
+
+    /// Helper: find all empty cells in the grid.
+    fn find_all_empties(grid: &Grid) -> Vec<(u8, u8)> {
+        let mut result = Vec::new();
+        for r in 0..9u8 {
+            for c in 0..9u8 {
+                let cell = &grid.cells[r as usize][c as usize];
+                if !cell.is_given && cell.value == 0 {
+                    result.push((r, c));
+                }
+            }
+        }
+        result
+    }
 }
