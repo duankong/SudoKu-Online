@@ -5,3 +5,5 @@ target/
 .codegraph/
 pkg/
 wasm-engine/bindings/
+
+CLAUDE.md
