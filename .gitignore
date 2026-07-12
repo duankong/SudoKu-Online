@@ -7,3 +7,5 @@ pkg/
 wasm-engine/bindings/
 
 CLAUDE.md
+reference/
+docs/superpowers/
