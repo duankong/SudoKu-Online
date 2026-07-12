@@ -73,11 +73,11 @@ export function StatusBar({
         )}
       </div>
 
-      {/* Right: "..." menu → /game-settings */}
+      {/* Right: "..." menu → /settings */}
       <button
-        onClick={() => navigate('/game-settings')}
+        onClick={() => navigate('/settings')}
         className="p-1 text-ink-mid hover:text-ink-dark transition-colors"
-        aria-label="Game Settings"
+        aria-label="Settings"
       >
         <MoreHorizontal size={20} />
       </button>
