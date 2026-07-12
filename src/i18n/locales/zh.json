@@ -1,0 +1,73 @@
+{
+  "app": {
+    "title": "Sudoku Calm",
+    "subtitle": "专注 · 沉浸 · 逻辑之美"
+  },
+  "dashboard": {
+    "continue": "继续游戏",
+    "daily": "每日挑战",
+    "streak": "连续 {{count}} 天",
+    "play": "选择难度",
+    "today": "今日题目",
+    "easy": "简单",
+    "easy_desc": "适合新手入门",
+    "medium": "中等",
+    "medium_desc": "稍有挑战性",
+    "hard": "困难",
+    "hard_desc": "需要一定技巧",
+    "expert": "专家",
+    "expert_desc": "高难度挑战",
+    "progress": "进度 {{progress}}%"
+  },
+  "game": {
+    "undo": "撤销",
+    "redo": "重做",
+    "autoNotes": "自动笔记",
+    "clearNotes": "清除笔记",
+    "hint": "提示",
+    "erase": "擦除",
+    "loading": "加载中...",
+    "loadError": "加载失败",
+    "retry": "重试"
+  },
+  "hint": {
+    "smartHint": "智能提示",
+    "notNow": "稍后",
+    "applyHint": "应用提示",
+    "recommended": "推荐填入:",
+    "eliminate": "排除候选数:",
+    "position": "位置 ({{row}}, {{col}})"
+  },
+  "statusBar": {
+    "errors": "{{count}}/{{max}} 错误"
+  },
+  "settings": {
+    "title": "设置",
+    "gameSettings": "游戏设置",
+    "language": "语言",
+    "sound": "音效",
+    "sound_desc": "操作时播放音效反馈",
+    "haptics": "震动反馈",
+    "haptics_desc": "操作时触发设备震动",
+    "about": "Sudoku Calm v0.1.0 · Built with React + Rust WASM"
+  },
+  "gameSettings": {
+    "title": "游戏设置",
+    "showTimer": "显示计时器",
+    "showTimer_desc": "在状态栏显示游戏用时",
+    "showHints": "显示提示解释",
+    "showHints_desc": "使用提示时展示逻辑推理过程",
+    "highlightAreas": "高亮关联区域",
+    "highlightAreas_desc": "选中单元格时高亮所在行、列和九宫格",
+    "highlightNumbers": "高亮相同数字",
+    "highlightNumbers_desc": "高亮全盘相同数字的单元格"
+  },
+  "gameOver": {
+    "won": "恭喜通关！",
+    "lost": "游戏结束",
+    "won_desc": "你完成了这道数独！",
+    "lost_desc": "错误次数已用完",
+    "newGame": "再来一局",
+    "home": "返回首页"
+  }
+}

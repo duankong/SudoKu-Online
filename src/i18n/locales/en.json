@@ -1,0 +1,74 @@
+{
+  "app": {
+    "title": "Sudoku Calm",
+    "subtitle": "Focus · Immerse · Logic"
+  },
+  "dashboard": {
+    "continue": "Continue Puzzle",
+    "daily": "Daily Challenge",
+    "streak": "{{count}} day streak",
+    "streak_plural": "{{count}} day streak",
+    "play": "Play by Difficulty",
+    "today": "Today's Puzzle",
+    "easy": "Easy",
+    "easy_desc": "Great for beginners",
+    "medium": "Medium",
+    "medium_desc": "A bit challenging",
+    "hard": "Hard",
+    "hard_desc": "Needs some skill",
+    "expert": "Expert",
+    "expert_desc": "Hardcore challenge",
+    "progress": "{{progress}}% complete"
+  },
+  "game": {
+    "undo": "Undo",
+    "redo": "Redo",
+    "autoNotes": "Auto Notes",
+    "clearNotes": "Clear Notes",
+    "hint": "Hint",
+    "erase": "Erase",
+    "loading": "Loading...",
+    "loadError": "Failed to load",
+    "retry": "Retry"
+  },
+  "hint": {
+    "smartHint": "Smart Hint",
+    "notNow": "Not Now",
+    "applyHint": "Apply Hint",
+    "recommended": "Recommended:",
+    "eliminate": "Eliminate candidates:",
+    "position": "Position ({{row}}, {{col}})"
+  },
+  "statusBar": {
+    "errors": "{{count}}/{{max}} errors"
+  },
+  "settings": {
+    "title": "Settings",
+    "gameSettings": "Game Settings",
+    "language": "Language",
+    "sound": "Sound",
+    "sound_desc": "Play sound effects",
+    "haptics": "Haptics",
+    "haptics_desc": "Device vibration feedback",
+    "about": "Sudoku Calm v0.1.0 · Built with React + Rust WASM"
+  },
+  "gameSettings": {
+    "title": "Game Settings",
+    "showTimer": "Show Timer",
+    "showTimer_desc": "Display timer in status bar",
+    "showHints": "Show Hint Explanations",
+    "showHints_desc": "Display logic reasoning with hints",
+    "highlightAreas": "Highlight Related Areas",
+    "highlightAreas_desc": "Highlight row, column and box of selected cell",
+    "highlightNumbers": "Highlight Same Numbers",
+    "highlightNumbers_desc": "Highlight all same-number cells on the board"
+  },
+  "gameOver": {
+    "won": "Congratulations!",
+    "lost": "Game Over",
+    "won_desc": "You completed the puzzle!",
+    "lost_desc": "Too many mistakes",
+    "newGame": "New Game",
+    "home": "Back to Home"
+  }
+}
