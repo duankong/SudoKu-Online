@@ -1,99 +1,42 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { GameSettings } from '../types/generated';
+import { useTranslation } from 'react-i18next';
+import { ArrowLeft, ChevronRight, Globe, Volume2, Smartphone } from 'lucide-react';
+import { setLanguage } from '../i18n';
 import type { UISettings } from '../types';
 
 const SETTINGS_KEY = 'sudokucalm-settings';
 
-function loadSettings(): { game: GameSettings; ui: UISettings } {
+function loadUISettings(): UISettings {
   try {
     const raw = localStorage.getItem(SETTINGS_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed.ui) return parsed.ui;
+    }
   } catch { /* ignore */ }
-  return {
-    game: {
-      show_timer: true,
-      show_hints: true,
-      highlight_areas: true,
-      highlight_numbers: true,
-    },
-    ui: {
-      sound: false,
-      haptics: false,
-    },
-  };
+  return { sound: false, haptics: false };
 }
 
-function saveSettings(settings: { game: GameSettings; ui: UISettings }) {
-  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-}
-
-interface ToggleProps {
-  label: string;
-  description?: string;
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-}
-
-function Toggle({ label, description, checked, onChange }: ToggleProps) {
-  return (
-    <label className="flex items-center justify-between py-3 cursor-pointer">
-      <div>
-        <div className="text-sm font-medium text-ink-dark">{label}</div>
-        {description && <div className="text-xs text-ink-mid mt-0.5">{description}</div>}
-      </div>
-      <button
-        role="switch"
-        aria-checked={checked}
-        onClick={() => onChange(!checked)}
-        className={`
-          relative inline-flex h-6 w-11 items-center rounded-full
-          transition-colors duration-200
-          ${checked ? 'bg-primary' : 'bg-gray-200'}
-        `}
-      >
-        <span
-          className={`
-            inline-block h-4 w-4 rounded-full bg-white shadow-sm
-            transform transition-transform duration-200
-            ${checked ? 'translate-x-6' : 'translate-x-1'}
-          `}
-        />
-      </button>
-    </label>
-  );
-}
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="mb-6">
-      <h3 className="text-xs font-medium text-ink-mid uppercase tracking-wider mb-1">{title}</h3>
-      <div className="divide-y divide-border">{children}</div>
-    </div>
-  );
+function saveUISettings(ui: UISettings) {
+  try {
+    const existing = localStorage.getItem(SETTINGS_KEY);
+    const data = existing ? JSON.parse(existing) : {};
+    data.ui = ui;
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(data));
+  } catch { /* ignore */ }
 }
 
 export function Settings() {
   const navigate = useNavigate();
-  const [settings, setSettings] = useState(loadSettings);
+  const { t, i18n } = useTranslation();
+  const [uiSettings, setUiSettings] = useState(loadUISettings);
 
   useEffect(() => {
-    saveSettings(settings);
-  }, [settings]);
+    saveUISettings(uiSettings);
+  }, [uiSettings]);
 
-  const updateGame = (key: keyof GameSettings, value: boolean) => {
-    setSettings((s) => ({
-      ...s,
-      game: { ...s.game, [key]: value },
-    }));
-  };
-
-  const updateUI = (key: keyof UISettings, value: boolean) => {
-    setSettings((s) => ({
-      ...s,
-      ui: { ...s.ui, [key]: value },
-    }));
-  };
+  const currentLang = i18n.language?.startsWith('zh') ? 'zh' : 'en';
 
   return (
     <div className="min-h-screen bg-white max-w-[500px] mx-auto px-6 py-8">
@@ -104,62 +47,118 @@ export function Settings() {
           className="p-1 text-ink-mid hover:text-ink-dark transition-colors"
           aria-label="Back"
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M19 12H5m7-7l-7 7 7 7" />
-          </svg>
+          <ArrowLeft size={20} />
         </button>
-        <h2 className="text-xl font-bold text-ink-dark">设置</h2>
+        <h2 className="text-xl font-bold text-ink-dark">{t('settings.title')}</h2>
       </div>
 
-      {/* Game Settings */}
-      <Section title="游戏设置">
-        <Toggle
-          label="显示计时器"
-          description="在状态栏显示游戏用时"
-          checked={settings.game.show_timer}
-          onChange={(v) => updateGame('show_timer', v)}
-        />
-        <Toggle
-          label="显示提示解释"
-          description="使用提示时展示逻辑推理过程"
-          checked={settings.game.show_hints}
-          onChange={(v) => updateGame('show_hints', v)}
-        />
-        <Toggle
-          label="高亮关联区域"
-          description="选中单元格时高亮所在行、列和九宫格"
-          checked={settings.game.highlight_areas}
-          onChange={(v) => updateGame('highlight_areas', v)}
-        />
-        <Toggle
-          label="高亮相同数字"
-          description="高亮全盘相同数字的单元格"
-          checked={settings.game.highlight_numbers}
-          onChange={(v) => updateGame('highlight_numbers', v)}
-        />
-      </Section>
+      {/* Language */}
+      <div className="mb-6">
+        <h3 className="text-xs font-medium text-ink-mid uppercase tracking-wider mb-1 px-1">
+          {t('settings.language')}
+        </h3>
+        <div className="bg-bg-board rounded-xl overflow-hidden">
+          <button
+            onClick={() => {
+              const next = currentLang === 'en' ? 'zh' : 'en';
+              setLanguage(next);
+            }}
+            className="flex items-center justify-between w-full px-4 py-3.5
+                       hover:bg-gray-100 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <Globe size={20} className="text-primary" />
+              <span className="text-sm font-medium text-ink-dark">
+                {currentLang === 'en' ? 'English' : '中文'}
+              </span>
+            </div>
+            <span className="text-xs text-ink-mid bg-white px-2 py-0.5 rounded-full">
+              {currentLang === 'en' ? 'EN' : '中文'}
+            </span>
+          </button>
+        </div>
+      </div>
 
-      {/* UI Settings */}
-      <Section title="界面设置">
-        <Toggle
-          label="音效"
-          description="操作时播放音效反馈"
-          checked={settings.ui.sound}
-          onChange={(v) => updateUI('sound', v)}
-        />
-        <Toggle
-          label="震动反馈"
-          description="操作时触发设备震动"
-          checked={settings.ui.haptics}
-          onChange={(v) => updateUI('haptics', v)}
-        />
-      </Section>
+      {/* Game Settings link */}
+      <div className="mb-6">
+        <h3 className="text-xs font-medium text-ink-mid uppercase tracking-wider mb-1 px-1"></h3>
+        <div className="bg-bg-board rounded-xl overflow-hidden">
+          <button
+            onClick={() => navigate('/game-settings')}
+            className="flex items-center justify-between w-full px-4 py-3.5
+                       hover:bg-gray-100 transition-colors"
+          >
+            <span className="text-sm font-medium text-ink-dark">{t('settings.gameSettings')}</span>
+            <ChevronRight size={18} className="text-ink-mid" />
+          </button>
+        </div>
+      </div>
+
+      {/* Sound & Haptics */}
+      <div className="mb-6">
+        <h3 className="text-xs font-medium text-ink-mid uppercase tracking-wider mb-1 px-1"></h3>
+        <div className="bg-bg-board rounded-xl divide-y divide-border overflow-hidden">
+          <label className="flex items-center justify-between px-4 py-3.5 cursor-pointer hover:bg-gray-100 transition-colors">
+            <div className="flex items-center gap-3">
+              <Volume2 size={20} className="text-primary" />
+              <div>
+                <div className="text-sm font-medium text-ink-dark">{t('settings.sound')}</div>
+                <div className="text-xs text-ink-mid">{t('settings.sound_desc')}</div>
+              </div>
+            </div>
+            <button
+              role="switch"
+              aria-checked={uiSettings.sound}
+              onClick={() => setUiSettings((s) => ({ ...s, sound: !s.sound }))}
+              className={`
+                relative inline-flex h-6 w-11 items-center rounded-full
+                transition-colors duration-200 flex-shrink-0
+                ${uiSettings.sound ? 'bg-primary' : 'bg-gray-200'}
+              `}
+            >
+              <span
+                className={`
+                  inline-block h-4 w-4 rounded-full bg-white shadow-sm
+                  transform transition-transform duration-200
+                  ${uiSettings.sound ? 'translate-x-6' : 'translate-x-1'}
+                `}
+              />
+            </button>
+          </label>
+
+          <label className="flex items-center justify-between px-4 py-3.5 cursor-pointer hover:bg-gray-100 transition-colors">
+            <div className="flex items-center gap-3">
+              <Smartphone size={20} className="text-primary" />
+              <div>
+                <div className="text-sm font-medium text-ink-dark">{t('settings.haptics')}</div>
+                <div className="text-xs text-ink-mid">{t('settings.haptics_desc')}</div>
+              </div>
+            </div>
+            <button
+              role="switch"
+              aria-checked={uiSettings.haptics}
+              onClick={() => setUiSettings((s) => ({ ...s, haptics: !s.haptics }))}
+              className={`
+                relative inline-flex h-6 w-11 items-center rounded-full
+                transition-colors duration-200 flex-shrink-0
+                ${uiSettings.haptics ? 'bg-primary' : 'bg-gray-200'}
+              `}
+            >
+              <span
+                className={`
+                  inline-block h-4 w-4 rounded-full bg-white shadow-sm
+                  transform transition-transform duration-200
+                  ${uiSettings.haptics ? 'translate-x-6' : 'translate-x-1'}
+                `}
+              />
+            </button>
+          </label>
+        </div>
+      </div>
 
       {/* About */}
       <div className="mt-10 pt-4 border-t border-border">
-        <p className="text-xs text-ink-mid text-center">
-          Sudoku Calm v0.1.0 · Built with React + Rust WASM
-        </p>
+        <p className="text-xs text-ink-mid text-center">{t('settings.about')}</p>
       </div>
     </div>
   );
