@@ -1,5 +1,5 @@
 <p align="center">
-  <h1 align="center">🧩 数独 Calm</h1>
+  <h1 align="center">🧩 数独 Online</h1>
   <p align="center"><em>Sudoku, done beautifully.</em></p>
 </p>
 
@@ -15,11 +15,12 @@
 
 ---
 
-<p align="center">
-  <img src="assets/dashboard.png" alt="Dashboard" width="45%" style="border-radius: 12px;" />
-  &nbsp;&nbsp;
-  <img src="assets/gameplay.png" alt="Gameplay" width="45%" style="border-radius: 12px;" />
-</p>
+<table align="center">
+  <tr>
+    <td align="center" width="50%"><img src="assets/dashboard.png" alt="Dashboard" width="100%" style="border-radius: 12px;" /></td>
+    <td align="center" width="50%"><img src="assets/gameplay.png" alt="Gameplay" width="100%" style="border-radius: 12px;" /></td>
+  </tr>
+</table>
 
 ---
 
@@ -87,16 +88,7 @@ sudokucalm/
 ### ⚡ Quick Start
 
 ```bash
-# 1. Install dependencies
-npm install
-
-# 2. Compile Rust → WASM
-npm run build:wasm
-
-# 3. Kill stale dev servers & start
-npx kill-port 5173 5174 5175 5176 5177 5178 5179
-npm run dev
-# → http://localhost:5173 🎉
+npx kill-port 5173
 ```
 
 ---
