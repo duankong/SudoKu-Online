@@ -39,8 +39,15 @@ export const GridBoard = React.memo(function GridBoard({
   return (
     <div className="w-full max-w-[500px] mx-auto">
       <div
-        className="grid grid-cols-9 border-2 border-ink-dark rounded-sm overflow-hidden"
-        style={{ borderColor: '#1C1C1E' }}
+        className="rounded-2xl overflow-hidden shadow-md"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(9, 1fr)',
+          border: '2.5px solid #3654D2',
+          backgroundColor: '#3654D2',
+          gap: '0.5px',
+          padding: '0',
+        }}
       >
         {grid.cells.map((row, r) =>
           row.map((cell, c) => {
@@ -48,17 +55,22 @@ export const GridBoard = React.memo(function GridBoard({
             const isSelected = selected?.row === r && selected?.col === c;
             const posKey = `${r},${c}`;
 
-            // Border logic for 3x3 boxes
-            const borderRight = (c + 1) % 3 === 0 && c !== 8 ? 'border-r-2' : 'border-r';
-            const borderBottom = (r + 1) % 3 === 0 && r !== 8 ? 'border-b-2' : 'border-b';
-            const borderColor = (c + 1) % 3 === 0 && c !== 8 ? 'border-r-ink-dark' : 'border-r-border';
-            const borderColorB = (r + 1) % 3 === 0 && r !== 8 ? 'border-b-ink-dark' : 'border-b-border';
+            // Box-border logic: draw thicker separators between 3x3 boxes
+            const isBoxRight = (c + 1) % 3 === 0 && c !== 8;
+            const isBoxBottom = (r + 1) % 3 === 0 && r !== 8;
+            const isBoxLeft = c % 3 === 0 && c !== 0;
+            const isBoxTop = r % 3 === 0 && r !== 0;
+
+            // Build inline border styles for fine-grained control
+            const borderStyle: React.CSSProperties = {
+              borderRight: isBoxRight ? '2.5px solid #3654D2' : '0.5px solid #D0D7E5',
+              borderBottom: isBoxBottom ? '2.5px solid #3654D2' : '0.5px solid #D0D7E5',
+              borderLeft: isBoxLeft ? '2.5px solid #3654D2' : '0.5px solid #D0D7E5',
+              borderTop: isBoxTop ? '2.5px solid #3654D2' : '0.5px solid #D0D7E5',
+            };
 
             return (
-              <div
-                key={key}
-                className={`${borderRight} ${borderBottom} ${borderColor} ${borderColorB}`}
-              >
+              <div key={key} style={borderStyle}>
                 <Cell
                   cell={cell}
                   row={r}

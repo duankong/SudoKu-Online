@@ -177,7 +177,7 @@ export function Game() {
   const disabled = paused || gameOver;
 
   return (
-    <div className="flex flex-col h-screen max-w-[500px] mx-auto bg-white">
+    <div className="flex flex-col h-screen max-w-[500px] mx-auto bg-bg-board">
       {/* Status bar */}
       <StatusBar
         difficulty={state.difficulty}

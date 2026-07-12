@@ -25,7 +25,7 @@ export function NumberPad({ onNumber, onErase, onToggleNoteMode, noteMode, disab
       </div>
 
       {/* Number buttons 1-9 */}
-      <div className="grid grid-cols-9 gap-1 sm:gap-2">
+      <div className="grid grid-cols-9 gap-1.5 sm:gap-2">
         {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
           <button
             key={n}
@@ -33,14 +33,19 @@ export function NumberPad({ onNumber, onErase, onToggleNoteMode, noteMode, disab
             disabled={disabled}
             className={`
               flex items-center justify-center
-              aspect-square rounded-lg
-              text-xl sm:text-2xl font-medium
+              aspect-square rounded-xl
+              text-xl sm:text-2xl font-semibold
               transition-all duration-75
-              bg-white border border-border
-              hover:bg-primary-light hover:border-primary
+              bg-white border shadow-sm
+              hover:bg-primary-pale hover:border-primary hover:shadow-md
               active:scale-95
-              ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
+              ${disabled ? 'opacity-40 cursor-not-allowed' : ''}
             `}
+            style={{
+              borderColor: '#D0D7E5',
+              color: '#3654D2',
+              fontFamily: "'Inter', 'SF Pro Display', 'PingFang SC', system-ui, sans-serif",
+            }}
           >
             {n}
           </button>

@@ -8,8 +8,9 @@ interface ToolbarProps {
 
 export function Toolbar({ onUndo, onRedo, onHint, onErase, disabled }: ToolbarProps) {
   const btnClass = `
-    p-2 rounded-lg text-ink-mid
-    hover:bg-gray-100 hover:text-ink-dark
+    p-2 rounded-xl
+    text-ink-light hover:text-primary
+    hover:bg-primary-pale
     active:scale-90 transition-all
     disabled:opacity-30 disabled:cursor-not-allowed
   `;

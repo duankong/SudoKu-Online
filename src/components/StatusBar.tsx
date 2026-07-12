@@ -31,7 +31,7 @@ export function StatusBar({
   const isPaused = gameStatus !== 'Playing';
 
   return (
-    <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+    <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid #D0D7E5' }}>
       {/* Left: Back + Difficulty */}
       <div className="flex items-center gap-3">
         <button

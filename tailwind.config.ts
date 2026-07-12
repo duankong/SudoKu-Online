@@ -5,11 +5,19 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: { DEFAULT: '#3654D2', light: '#DDE6F9' },
+        primary: { DEFAULT: '#3654D2', light: '#DDE6F9', pale: '#ECF1FB' },
         accent: '#E4C779',
-        ink: { dark: '#1C1C1E', mid: '#767680', light: '#D0D7E5' },
-        border: '#8294B4',
-        error: '#C62828',
+        ink: {
+          dark: '#2C2C2E',
+          DEFAULT: '#48484A',
+          mid: '#8E8E93',
+          light: '#B0B0B8',
+        },
+        border: '#D0D7E5',
+        'border-box': '#3654D2',
+        'bg-board': '#F8F9FC',
+        'bg-cell': '#F2F4F8',
+        error: '#E53935',
       },
       fontSize: {
         cell: ['1.75rem', { lineHeight: '1' }],
