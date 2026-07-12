@@ -14,3 +14,6 @@ ts-rs = "10"
 sha2 = "0.10"
 rand = "0.8"
 console_error_panic_hook = "0.1"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+js-sys = "0.3"

@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-#[derive(Clone, Serialize, Deserialize, TS)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
 #[ts(export)]
 pub struct Pos {
     pub row: u8,
@@ -56,7 +56,7 @@ pub struct Grid {
     pub highlights: Highlights,
 }
 
-#[derive(Clone, Serialize, Deserialize, TS)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
 #[ts(export)]
 pub enum GameStatus { Playing, Won, Lost }
 
@@ -133,6 +133,7 @@ pub enum Action {
     Undo,
     Redo,
     GetHint,
+    NewGame { difficulty: Difficulty },
     UpdateGameSettings { settings: GameSettings },
     SetFinalTime { seconds: u32 },
 }
