@@ -88,7 +88,16 @@ sudokucalm/
 ### ⚡ Quick Start
 
 ```bash
+# 1. Install dependencies
+npm install
+
+# 2. Compile Rust → WASM
+npm run build:wasm
+
+# 3. Kill stale dev servers & start
 npx kill-port 5173
+npm run dev
+# → http://localhost:5173 🎉
 ```
 
 ---
