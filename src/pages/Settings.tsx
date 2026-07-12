@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Clock, Lightbulb, Layers, Hash } from 'lucide-react';
+import { ArrowLeft, Clock, Lightbulb, Layers, Hash, Info } from 'lucide-react';
 import { useGameEngine } from '../hooks/useGameEngine';
 import type { GameSettings as GameSettingsType } from '../types/generated';
 
@@ -107,12 +107,18 @@ export function Settings() {
               </button>
             </label>
           ))}
+          {/* Version — same card, last row */}
+          <div className="flex items-center justify-between px-4 py-3.5">
+            <div className="flex items-center gap-3">
+              <Info size={20} className="text-primary flex-shrink-0" />
+              <span className="text-sm font-medium text-ink-dark">Version</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-ink-mid">{__BUILD_TIME__}</span>
+              <span className="text-sm font-medium text-ink-dark">V{__VERSION__}</span>
+            </div>
+          </div>
         </div>
-      </div>
-
-      {/* About */}
-      <div className="mt-10 pt-4 border-t border-border">
-        <p className="text-xs text-ink-mid text-center">{t('settings.about')}</p>
       </div>
     </div>
   );

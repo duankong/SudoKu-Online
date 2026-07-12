@@ -10,9 +10,7 @@ function detectLanguage(): string {
     const stored = localStorage.getItem(LANGUAGE_KEY);
     if (stored === 'en' || stored === 'zh') return stored;
   } catch { /* ignore */ }
-  // Fall back to browser language
-  const browserLang = navigator.language?.startsWith('zh') ? 'zh' : 'en';
-  return browserLang;
+  return 'en';
 }
 
 i18n.use(initReactI18next).init({
