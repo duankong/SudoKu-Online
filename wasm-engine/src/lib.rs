@@ -1,5 +1,6 @@
 use wasm_bindgen::prelude::*;
 
+mod grid;
 mod types;
 
 #[wasm_bindgen(start)]
